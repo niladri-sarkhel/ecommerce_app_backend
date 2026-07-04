@@ -1,0 +1,49 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./index.js",
+    "start": "node ./index.js",
+    "data:transform": "node ./scripts/seed/data/normalize_phone_data.js",
+    "db:seed": "node ./scripts/seed/seed.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Niladri-Sarkhel/e_commerce_backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "imports": {
+    "#config": "./src/config/index.js",
+    "#controllers": "./src/controllers/index.js",
+    "#errors": "./src/errors/index.js",
+    "#middlewares": "./src/middlewares/index.js",
+    "#models": "./src/models/index.js",
+    "#schemas": "./src/schemas/index.js",
+    "#routes": "./src/routes/index.js",
+    "#services": "./src/services/index.js",
+    "#utils": "./src/utils/index.js",
+    "#validators": "./src/validators/index.js",
+    "#app": "./src/app.js",
+    "#server": "./src/server.js"
+  },
+  "bugs": {
+    "url": "https://github.com/Niladri-Sarkhel/e_commerce_backend/issues"
+  },
+  "homepage": "https://github.com/Niladri-Sarkhel/e_commerce_backend#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "joi": "^18.2.1",
+    "mongoose": "^9.7.2",
+    "nodemon": "^3.1.14",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3"
+  }
+}

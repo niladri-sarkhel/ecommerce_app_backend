@@ -1,0 +1,107 @@
+direction: right
+
+Buyer: Buyer
+Seller: Seller
+Admin: Admin
+
+api: "REST API"
+
+Buyer -> api: Search / Browse / Purchase
+Seller -> api: Create Listing\nUpdate Stock\nUpdate Price
+Admin -> api: Manage Catalog
+
+api -> search: Product Search Service
+
+search -> product: Query Specifications
+search -> listing: Query Offers
+
+product: {
+  label: "products collection"
+
+  id: Product ID
+  gtin: GTIN
+  slug: Slug
+  brand: Brand
+  model: Model
+  category: Category
+
+  specifications: {
+    network
+    body
+    display
+    platform
+    memory
+    camera
+    battery
+    connectivity
+  }
+
+  media
+}
+
+listing: {
+  label: "listings collection"
+
+  id: Listing ID
+
+  product_id
+
+  seller_id
+
+  price
+
+  quantity
+
+  condition
+
+  shipping
+
+  status
+}
+
+seller: {
+  label: "sellers collection"
+
+  id
+  name
+  rating
+}
+
+user: {
+  label: "users collection"
+
+  id
+  profile
+}
+
+order: {
+  label: "orders collection"
+
+  id
+  buyer_id
+  items
+  payment
+  shipping
+}
+
+cart: {
+  label: "carts collection"
+
+  id
+  buyer_id
+  items
+}
+
+product -> listing: "1 : many"
+
+seller -> listing: "1 : many"
+
+user -> cart
+
+user -> order
+
+listing -> order
+
+product -> cart
+
+listing -> cart
