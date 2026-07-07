@@ -25,7 +25,7 @@ async function runTest() {
     console.log("Connected to MongoDB successfully.\n");
 
     // 2. Define the search term you want to test (e.g., "zest", "tab", "acer")
-    const testQuery = "samsung-galaxy";
+    const testQuery = "samsung galaxy";
     console.log(`🔍 Searching for slugs matching: "${testQuery}"...`);
 
     // 3. Call the service function

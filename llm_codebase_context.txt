@@ -1,0 +1,2961 @@
+=========================================================================
+PROJECT CONTEXT SUMMARY
+Generated on: Tue Jul  7 12:00:20 PM IST 2026
+=========================================================================
+
+## PROJECT TREE STRUCTURE
+```text
+.
+├── architecture
+│   ├── test.d2
+│   ├── test.jpg
+│   └── test.svg
+├── compose.yml
+├── dump_context.sh
+├── index.js
+├── llm_codebase_context.txt
+├── package-lock.json
+├── package.json
+├── README.md
+├── scripts
+│   └── seed
+│       ├── brand.seed.js
+│       ├── categories.seed.js
+│       ├── data
+│       │   ├── count.js
+│       │   ├── extract-slugs.js
+│       │   ├── normalize_phone_data.js
+│       │   ├── normalized_phone_data.json
+│       │   ├── phone_data.json
+│       │   └── slugs.json
+│       ├── product.seed.js
+│       ├── seed.js
+│       ├── transformers
+│       │   ├── index.js
+│       │   ├── parsers
+│       │   │   ├── audio.js
+│       │   │   ├── battery.js
+│       │   │   ├── body.js
+│       │   │   ├── camera.js
+│       │   │   ├── catalog.js
+│       │   │   ├── connectivity.js
+│       │   │   ├── display.js
+│       │   │   ├── helpers.js
+│       │   │   ├── identity.js
+│       │   │   ├── media.js
+│       │   │   ├── memory.js
+│       │   │   ├── metadata.js
+│       │   │   ├── network.js
+│       │   │   └── platform.js
+│       │   └── product.transformer.js
+│       └── utils
+│           ├── gtin.js
+│           ├── month.js
+│           ├── parser.js
+│           └── slugify.js
+├── src
+│   ├── app.js
+│   ├── config
+│   │   ├── consts.js
+│   │   ├── env.js
+│   │   ├── index.js
+│   │   ├── mongodb.js
+│   │   └── postgres.js
+│   ├── controllers
+│   │   ├── catalog.controller.js
+│   │   ├── index.js
+│   │   └── test-controllers.js
+│   ├── errors
+│   │   └── index.js
+│   ├── middlewares
+│   │   └── index.js
+│   ├── models
+│   │   ├── Brand.js
+│   │   ├── Cart.js
+│   │   ├── Category.js
+│   │   ├── index.js
+│   │   ├── Listing.js
+│   │   ├── Order.js
+│   │   ├── Product.js
+│   │   ├── Review.js
+│   │   ├── Seller.js
+│   │   └── User.js
+│   ├── routes
+│   │   ├── api-v1-router.js
+│   │   ├── cart.router.js
+│   │   ├── catalog.router.js
+│   │   ├── checkout.router.js
+│   │   ├── index.js
+│   │   ├── seller.router.js
+│   │   └── test-router.js
+│   ├── schemas
+│   │   ├── common
+│   │   │   ├── address.js
+│   │   │   ├── dimensions.js
+│   │   │   ├── image.js
+│   │   │   ├── money.js
+│   │   │   ├── seo.js
+│   │   │   └── timestamps.js
+│   │   ├── index.js
+│   │   ├── listing
+│   │   │   ├── index.js
+│   │   │   ├── inventory.js
+│   │   │   ├── pricing.js
+│   │   │   ├── shipping.js
+│   │   │   └── status.js
+│   │   ├── product
+│   │   │   ├── catalog.js
+│   │   │   ├── identity.js
+│   │   │   ├── index.js
+│   │   │   ├── media.js
+│   │   │   ├── metadata.js
+│   │   │   └── product.schema.js
+│   │   └── specifications
+│   │       ├── audio.js
+│   │       ├── battery.js
+│   │       ├── body.js
+│   │       ├── camera.js
+│   │       ├── connectivity.js
+│   │       ├── display.js
+│   │       ├── index.js
+│   │       ├── memory.js
+│   │       ├── network.js
+│   │       ├── platform.js
+│   │       ├── sensor.js
+│   │       └── specification.schema.js
+│   ├── server.js
+│   ├── services
+│   │   ├── catalog.service.js
+│   │   └── index.js
+│   ├── utils
+│   │   ├── index.js
+│   │   └── logger.js
+│   └── validators
+│       └── index.js
+└── tests
+    └── test-search.js
+```
+
+## SOURCE CODES AND FILES
+=========================================================================
+
+### FILE: ./.dockerignore
+```text
+.env
+node_modules
+.git
+
+```
+
+---
+
+### FILE: ./compose.yml
+```yml
+services:
+  ecommerce_node_server:
+    image: node:26-alpine
+    container_name: ecommerce_server
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+    command: sh -c "tail -f /dev/null"
+
+  ecommerce_mongodb_server:
+    image: mongo:latest
+    container_name: ecommerce_db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: blue
+      MONGO_INITDB_ROOT_PASSWORD: adminfjsl90vvv
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
+
+```
+
+---
+
+### FILE: ./index.js
+```js
+// index.js
+import { env } from "#config";
+import { startServer } from "#server";
+
+startServer({
+  port: env.PORT,
+  appName: env.APP_NAME,
+  appUrl: env.APP_URL,
+  databaseUrl: env.MONGODB_URL,
+});
+
+```
+
+---
+
+### FILE: ./package.json
+```json
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./index.js",
+    "start": "node ./index.js",
+    "data:transform": "node ./scripts/seed/data/normalize_phone_data.js",
+    "db:seed": "node ./scripts/seed/seed.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Niladri-Sarkhel/e_commerce_backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "imports": {
+    "#config": "./src/config/index.js",
+    "#controllers": "./src/controllers/index.js",
+    "#errors": "./src/errors/index.js",
+    "#middlewares": "./src/middlewares/index.js",
+    "#models": "./src/models/index.js",
+    "#schemas": "./src/schemas/index.js",
+    "#routes": "./src/routes/index.js",
+    "#services": "./src/services/index.js",
+    "#utils": "./src/utils/index.js",
+    "#validators": "./src/validators/index.js",
+    "#app": "./src/app.js",
+    "#server": "./src/server.js"
+  },
+  "bugs": {
+    "url": "https://github.com/Niladri-Sarkhel/e_commerce_backend/issues"
+  },
+  "homepage": "https://github.com/Niladri-Sarkhel/e_commerce_backend#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "joi": "^18.2.1",
+    "mongoose": "^9.7.2",
+    "nodemon": "^3.1.14",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3"
+  }
+}
+
+```
+
+---
+
+### FILE: ./src/app.js
+```js
+import express from "express";
+
+import cors from "cors"; // 👈 Import here
+
+// import { handleReqErrors } from "#errors";
+import { apiV1Router } from "#routes";
+
+export const app = express();
+app
+  .use(express.json())
+  .use(cors())
+  .use(express.urlencoded({ extended: true }))
+  .use("/api/v1", apiV1Router)
+  .use((_, res) => {
+    return res.status(404).json({ message: "page not found :(" });
+  });
+// .use(handleReqErrors);
+
+```
+
+---
+
+### FILE: ./src/config/consts.js
+```js
+// consts.js
+// --- 1. Security & Authentication ---
+export const AUTH = Object.freeze({
+  ROLES: {
+    ADMIN: "admin",
+    CUSTOMER: "customer",
+  },
+  TOKEN_EXPIRY: {
+    ACCESS: "15m",
+    REFRESH: "7d",
+  },
+  ALGORITHM: "HS256",
+});
+
+// --- 2. Database Entities & Limits ---
+export const DB = Object.freeze({
+  TABLES: {
+    USERS: "users",
+    PRODUCTS: "products",
+    CATEGORIES: "categories",
+    INVENTORY: "inventories",
+    CARTS: "carts",
+    CART_ITEMS: "cart_items",
+    ORDERS: "orders",
+    ORDER_ITEMS: "order_items",
+    PAYMENTS: "payments",
+    AUDIT_LOGS: "audit_logs",
+  },
+  // Pagination standard defaults
+  PAGINATION: {
+    DEFAULT_PAGE: 1,
+    DEFAULT_LIMIT: 10,
+    MAX_LIMIT: 50,
+  },
+});
+
+// --- 3. Order & Inventory Lifecycle States ---
+export const ORDER_STATUS = Object.freeze({
+  PENDING: "pending", // Order created, awaiting payment
+  PAID: "paid", // Payment successful
+  PROCESSING: "processing", // In the warehouse
+  SHIPPED: "shipped", // En route to customer
+  DELIVERED: "delivered", // Completed
+  CANCELLED: "cancelled", // Cancelled by user or admin
+  REFUNDED: "refunded", // Money returned
+});
+
+export const PAYMENT_STATUS = Object.freeze({
+  PENDING: "pending",
+  COMPLETED: "completed",
+  FAILED: "failed",
+  REFUNDED: "refunded",
+});
+
+export const PAYMENT_PROVIDERS = Object.freeze({
+  STRIPE: "stripe",
+  RAZORPAY: "razorpay",
+});
+
+// --- 4. Caching & Redis Strategies ---
+// Centralized TTLs (Time-To-Live in seconds) and Key Namespaces
+export const CACHE = Object.freeze({
+  TTL: {
+    ONE_MINUTE: 60,
+    FIVE_MINUTES: 300,
+    ONE_HOUR: 3600,
+    ONE_DAY: 86400,
+  },
+  PREFIXES: {
+    PRODUCT_CATALOG: "catalog:products:",
+    PRODUCT_DETAILS: "catalog:detail:",
+    CATEGORIES: "catalog:categories",
+    USER_SESSION: "session:user:",
+    RATE_LIMIT: "ratelimit:",
+  },
+});
+
+// --- 5. System Infrastructure (Bonus Items) ---
+export const RATE_LIMIT = Object.freeze({
+  WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  MAX_REQUESTS: {
+    PUBLIC: 100, // General browsing
+    AUTH: 5, // Login/Register brute-force defense
+    CHECKOUT: 3, // Prevent payment spamming
+  },
+});
+
+// For your Audit Log feature (Demonstrates strong enterprise compliance)
+export const AUDIT_ACTIONS = Object.freeze({
+  USER_LOGIN: "user.login",
+  USER_REGISTER: "user.register",
+  PRODUCT_CREATE: "product.create",
+  PRODUCT_UPDATE: "product.update",
+  PRODUCT_DELETE: "product.delete",
+  INVENTORY_STOCK_OUT: "inventory.stock_out",
+  ORDER_PLACE: "order.place",
+  ORDER_STATUS_CHANGE: "order.status_change",
+  PAYMENT_EXECUTE: "payment.execute",
+});
+
+// --- 6. Event Notification Channels ---
+export const NOTIFICATION_TEMPLATES = Object.freeze({
+  WELCOME_EMAIL: "WELCOME_EMAIL",
+  EMAIL_VERIFICATION: "EMAIL_VERIFICATION",
+  PASSWORD_RESET: "PASSWORD_RESET",
+  ORDER_CONFIRMATION: "ORDER_CONFIRMATION",
+  LOW_STOCK_ALERT: "LOW_STOCK_ALERT",
+});
+
+```
+
+---
+
+### FILE: ./src/config/env.js
+```js
+import joi from "joi";
+
+console.log({
+  APP_NAME: process.env.APP_NAME,
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
+  APP_URL: process.env.APP_URL,
+  MONGODB_URL: process.env.MONGODB_URL,
+  LOG_LEVEL: process.env.LOG_LEVEL,
+});
+
+const envSchema = joi.object({
+  NODE_ENV: joi.string().valid("development", "test", "production").required(),
+
+  PORT: joi.number().integer().port().required(),
+
+  APP_NAME: joi.string().required(),
+
+  APP_URL: joi.string().uri().required(),
+
+  MONGODB_URL: joi.string().uri().required(),
+
+  LOG_LEVEL: joi
+    .string()
+    .valid("fatal", "error", "warn", "info", "debug", "trace")
+    .required(),
+});
+
+const { value, error } = envSchema.validate(process.env, {
+  abortEarly: false,
+  stripUnknown: true,
+});
+
+if (error) {
+  const errors = error.details.map((detail) => detail.message);
+
+  console.error({
+    message: "❌ Failed to start server due to invalid environment variables",
+    errors,
+  });
+
+  process.exit(1);
+}
+
+export const env = Object.freeze(value);
+console.log(env);
+
+```
+
+---
+
+### FILE: ./src/config/index.js
+```js
+export * from "./env.js";
+export * from "./consts.js";
+export * from "./mongodb.js";
+
+```
+
+---
+
+### FILE: ./src/config/postgres.js
+```js
+
+```
+
+---
+
+### FILE: ./src/config/mongodb.js
+```js
+import mongoose from "mongoose";
+
+import { logger } from "#utils";
+
+mongoose.connection.on("connected", () => {
+  logger.info("MongoDB connected");
+});
+
+mongoose.connection.on("disconnected", () => {
+  logger.warn("MongoDB disconnected");
+});
+
+mongoose.connection.on("error", (error) => {
+  logger.error({ err: error }, "MongoDB connection error");
+});
+
+export const connectMongoDB = async (mongodbURL) => {
+  try {
+    logger.info("Connecting to MongoDB...");
+
+    await mongoose.connect(mongodbURL);
+
+    return mongoose.connection;
+  } catch (error) {
+    logger.fatal({ err: error }, "Failed to connect to MongoDB");
+
+    throw error;
+  }
+};
+
+export const disconnectMongoDB = async () => {
+  try {
+    await mongoose.disconnect();
+    logger.info("MongoDB connection closed");
+  } catch (error) {
+    logger.error({ err: error }, "Failed to disconnect MongoDB");
+
+    throw error;
+  }
+};
+
+```
+
+---
+
+### FILE: ./src/controllers/index.js
+```js
+export * from "./catalog.controller.js";
+export * from "./test-controllers.js";
+
+```
+
+---
+
+### FILE: ./src/controllers/catalog.controller.js
+```js
+import { Product } from "#models";
+
+/**
+ * Controller handling all catalog-related query and autocomplete requests.
+ * Upgraded with delimiter-agnostic tokenizer and dynamic distance-1 Levenshtein regex generation.
+ */
+export class CatalogController {
+  /**
+   * Generates a list of live search suggestions using an optimized multi-priority regex match.
+   * Preserves 'this' context for safe routing.
+   */
+  getLiveSuggestions = async (req, res) => {
+    try {
+      const { query, limit = 8 } = req.query;
+
+      if (!query || query.trim() === "") {
+        return res.status(200).json({ success: true, total: 0, data: [] });
+      }
+
+      const cleanQuery = query.trim();
+      const maxResults = parseInt(limit, 10);
+
+      // Construct search criteria with smart typo-tolerance and delimiter-flexibility
+      const searchConditions = this.#buildSearchConditions(cleanQuery);
+
+      // Run database query and matching count in parallel for maximum performance
+      const [products, totalMatches] = await Promise.all([
+        Product.find({ $or: searchConditions })
+          .populate("identity.brandId")
+          .limit(maxResults)
+          .lean(),
+        Product.countDocuments({ $or: searchConditions }),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        total: totalMatches,
+        data: products,
+      });
+    } catch (error) {
+      console.error("Autocomplete backend error in CatalogController:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error fetching suggestions.",
+      });
+    }
+  };
+
+  /**
+   * Static static lookup of a catalog entry by its unique GTIN barcode.
+   * Used when sellers scan hardware barcodes or search exact GTIN numbers.
+   */
+  getGtinLookup = async (req, res) => {
+    try {
+      const { gtin } = req.params;
+
+      if (!gtin) {
+        return res
+          .status(400)
+          .json({ success: false, message: "GTIN barcode is required." });
+      }
+
+      const product = await Product.findOne({
+        "identity.gtin": gtin.trim(),
+        "metadata.isActive": true,
+        "metadata.isDeleted": false,
+      })
+        .populate("identity.brandId")
+        .lean();
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: `Product with GTIN "${gtin}" was not found in the master catalog.`,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: product,
+      });
+    } catch (error) {
+      console.error("GTIN lookup error in CatalogController:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error performing barcode lookup.",
+      });
+    }
+  };
+
+  // ==========================================
+  // 🛠️ ADMIN ONLY: MASTER CATALOG WRITES (CRUD STUBS)
+  // ==========================================
+
+  createCatalogProduct = async (req, res) => {
+    try {
+      // Placeholder structure for admin catalog additions
+      return res
+        .status(501)
+        .json({ success: false, message: "Not implemented yet." });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  updateCatalogProduct = async (req, res) => {
+    try {
+      // Placeholder structure for admin catalog edits
+      return res
+        .status(501)
+        .json({ success: false, message: "Not implemented yet." });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  deleteCatalogProduct = async (req, res) => {
+    try {
+      // Placeholder structure for admin catalog deletions
+      return res
+        .status(501)
+        .json({ success: false, message: "Not implemented yet." });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  // ==========================================
+  // 🔒 PRIVATE UTILITY METHODS
+  // ==========================================
+
+  /**
+   * Safe regex escaper to protect against regex injection vulnerabilities.
+   * @private
+   */
+  #escapeRegex(text) {
+    return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+  }
+
+  /**
+   * Dynamically constructs a distance-1 Levenshtein matching regex for any word.
+   * Handles 1-character substitutions, omissions, and insertions.
+   * @private
+   */
+  #getFuzzyRegexForToken(token) {
+    const clean = token.toLowerCase();
+    if (clean.length <= 3) {
+      return this.#escapeRegex(clean);
+    }
+
+    const variants = new Set();
+    variants.add(this.#escapeRegex(clean));
+
+    // 1. Substitutions (allow any 1 character to vary, e.g. "sansung" -> "sa.sung")
+    for (let i = 0; i < clean.length; i++) {
+      const prefix = clean.slice(0, i);
+      const suffix = clean.slice(i + 1);
+      variants.add(this.#escapeRegex(prefix) + "." + this.#escapeRegex(suffix));
+    }
+
+    // 2. Deletions (character in query is dropped, e.g. "samsng" -> "samsung" via dropping the mismatch)
+    for (let i = 0; i < clean.length; i++) {
+      const prefix = clean.slice(0, i);
+      const suffix = clean.slice(i + 1);
+      variants.add(this.#escapeRegex(prefix) + this.#escapeRegex(suffix));
+    }
+
+    // 3. Insertions (allow an extra wild character, e.g. "samsug" -> "samsu.?g")
+    for (let i = 1; i < clean.length; i++) {
+      const prefix = clean.slice(0, i);
+      const suffix = clean.slice(i);
+      variants.add(
+        this.#escapeRegex(prefix) + ".?" + this.#escapeRegex(suffix),
+      );
+    }
+
+    return `(?:${Array.from(variants).join("|")})`;
+  }
+
+  /**
+   * Private helper method to construct the regex query array.
+   * Orders clauses by strictness to maximize MongoDB search index efficiency.
+   * @private
+   */
+  #buildSearchConditions(rawQuery) {
+    const escapedQuery = this.#escapeRegex(rawQuery);
+
+    // Split the query by space, hyphens, slashes, or underscores to capture raw semantic tokens
+    const tokens = rawQuery.split(/[\s\-_/]+/).filter(Boolean);
+
+    // Fallback if split yields no usable tokens
+    if (tokens.length === 0) {
+      return [{ "identity.model": { $regex: new RegExp(escapedQuery, "i") } }];
+    }
+
+    // 1. Contiguous delimiter-tolerant phrase matching (e.g. "samsung galaxy" matches "samsung-galaxy" or "samsung_galaxy")
+    const delimiterAgnosticPattern = tokens
+      .map((t) => this.#escapeRegex(t))
+      .join("[-_\\s/]*");
+    const phraseRegex = new RegExp(delimiterAgnosticPattern, "i");
+
+    // 2. Multi-word exact out-of-order match (e.g. "galaxy samsung" -> matches "Samsung Galaxy")
+    const strictMultiWordPattern = tokens
+      .map((t) => `(?=.*${this.#escapeRegex(t)})`)
+      .join("");
+    const strictMultiWordRegex = new RegExp(strictMultiWordPattern, "i");
+
+    // 3. Multi-word fuzzy match with typo-tolerance (e.g. "sansung galaxy" -> matches "Samsung Galaxy")
+    const fuzzyTokens = tokens.map((t) => this.#getFuzzyRegexForToken(t));
+    const fuzzyMultiWordPattern = fuzzyTokens.map((f) => `(?=.*${f})`).join("");
+    const fuzzyMultiWordRegex = new RegExp(fuzzyMultiWordPattern, "i");
+
+    return [
+      // Match 1: Exact GTIN barcode entry
+      { "identity.gtin": rawQuery.trim() },
+
+      // Match 2: Model starts with the exact contiguous phrase (Anchored search - highly optimized!)
+      {
+        "identity.model": {
+          $regex: new RegExp(`^${delimiterAgnosticPattern}`, "i"),
+        },
+      },
+
+      // Match 3: Model matches exact contiguous phrase anywhere
+      { "identity.model": { $regex: phraseRegex } },
+
+      // Match 4: Model matches strict out-of-order query tokens
+      { "identity.model": { $regex: strictMultiWordRegex } },
+
+      // Match 5: Ultimate Fallback - Out-of-order fuzzy lookahead match (Catch typos like 'sansung')
+      { "identity.model": { $regex: fuzzyMultiWordRegex } },
+
+      // Match 6: Slug substring matching
+      { "identity.slug": { $regex: phraseRegex } },
+    ];
+  }
+}
+
+```
+
+---
+
+### FILE: ./src/controllers/test-controllers.js
+```js
+import { logger } from "#utils";
+
+import { Product, Brand, Category } from "#models";
+export const testController = {
+  ping: (req, res) => {
+    logger.info(
+      { controller: "testController", func: "ping" },
+      "this is a controller to test the server connection",
+    );
+    res.status(200).json({
+      status: "success",
+      message: "🏓 pong!",
+      timestamp: new Date().toISOString(),
+    });
+  },
+
+  echo: (req, res) => {
+    logger.info(
+      { controller: "testController", func: "echo" },
+      "this is a controller to test the server connection",
+    );
+    res.status(200).json({
+      status: "success",
+      message: "Data received successfully",
+      receivedBody: req.body,
+      receivedHeaders: req.headers,
+    });
+  },
+
+  asyncTest: async (req, res) => {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      logger.info(
+        { controller: "testController", func: "asyncTest" },
+        "this is a controller to test the server connection",
+      );
+      res.status(200).json({
+        status: "success",
+        message: "Async event loop and connections are working fine.",
+      });
+    } catch (error) {
+      res.status(500).json({ status: "error", message: error.message });
+    }
+  },
+
+  testDbCatalog: async (req, res, next) => {
+    try {
+      // 1. Get a quick count of everything to verify totals
+      const totalProducts = await Product.countDocuments();
+      const totalBrands = await Brand.countDocuments();
+      const totalCategories = await Category.countDocuments();
+
+      // 2. Fetch one product and populate its relational fields
+      const sampleProduct = await Product.findOne()
+        .populate("identity.brandId")
+        .populate("catalog.categoryId");
+
+      if (!sampleProduct) {
+        return res.status(404).json({
+          success: false,
+          message: "No data found in products collection.",
+        });
+      }
+
+      // 3. Return a clean report card
+      return res.status(200).json({
+        success: true,
+        metrics: {
+          totalProducts,
+          totalBrands,
+          totalCategories,
+        },
+        testSample: {
+          model: sampleProduct.identity.model,
+          slug: sampleProduct.identity.slug,
+          sku: sampleProduct.identity.sku,
+          gtin: sampleProduct.identity.gtin,
+          resolvedBrand: sampleProduct.identity.brandId
+            ? {
+                id: sampleProduct.identity.brandId._id,
+                name: sampleProduct.identity.brandId.name,
+                slug: sampleProduct.identity.brandId.slug,
+              }
+            : "⚠️ NOT POPULATED",
+          resolvedCategory: sampleProduct.catalog.categoryId
+            ? {
+                id: sampleProduct.catalog.categoryId._id,
+                name: sampleProduct.catalog.categoryId.name,
+                slug: sampleProduct.catalog.categoryId.slug,
+              }
+            : "⚠️ NOT POPULATED",
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
+```
+
+---
+
+### FILE: ./src/errors/index.js
+```js
+
+```
+
+---
+
+### FILE: ./src/middlewares/index.js
+```js
+
+```
+
+---
+
+### FILE: ./src/models/index.js
+```js
+export * from "./Brand.js";
+export * from "./Category.js";
+export * from "./Product.js";
+export * from "./Listing.js";
+
+```
+
+---
+
+### FILE: ./src/models/Product.js
+```js
+import mongoose from "mongoose";
+import { productSchema } from "#schemas";
+
+// Core Identity Unique Constraints
+productSchema.index({ "identity.gtin": 1 }, { unique: true });
+productSchema.index({ "identity.sku": 1 }, { unique: true });
+productSchema.index({ "identity.slug": 1 }, { unique: true });
+
+// Multi-attribute relational filters
+productSchema.index({ "identity.brandId": 1, "catalog.categoryId": 1 });
+productSchema.index({ "catalog.status": 1 });
+
+// High-performance search filter index for active, non-deleted entries
+productSchema.index(
+  { "metadata.isActive": 1, "metadata.isDeleted": 1 },
+  { partialFilterExpression: { "metadata.isDeleted": false } },
+);
+
+export const Product = mongoose.model("Product", productSchema, "products");
+
+```
+
+---
+
+### FILE: ./src/models/Listing.js
+```js
+import mongoose from "mongoose";
+import {
+  pricingSchema,
+  inventorySchema,
+  shippingSchema,
+  statusSchema,
+} from "#schemas";
+
+const listingSchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+      index: true,
+    },
+    sellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seller",
+      required: true,
+      index: true,
+    },
+    pricing: {
+      type: pricingSchema,
+      required: true,
+    },
+    inventory: {
+      type: inventorySchema,
+      required: true,
+    },
+    shipping: {
+      type: shippingSchema,
+      required: true,
+    },
+    status: {
+      type: statusSchema,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "listings",
+  },
+);
+
+// Compound indexing to guarantee a single seller can't list the exact same product twice
+listingSchema.index({ sellerId: 1, productId: 1 }, { unique: true });
+
+listingSchema.index({
+  productId: 1,
+  "status.state": 1,
+  "pricing.sellingPrice": 1,
+});
+
+export const Listing = mongoose.model("Listing", listingSchema);
+
+```
+
+---
+
+### FILE: ./src/models/Brand.js
+```js
+import mongoose from "mongoose";
+
+const brandSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true, // Clean fix: Enforces uniqueness inline
+    },
+    slug: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+      unique: true, // Clean fix: Enforces uniqueness inline
+    },
+    logo: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    website: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    country: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "brands",
+  },
+);
+
+export const Brand = mongoose.model("Brand", brandSchema);
+
+```
+
+---
+
+### FILE: ./src/models/Category.js
+```js
+import mongoose from "mongoose";
+
+const categorySchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "categories",
+  },
+);
+
+categorySchema.index({ name: 1 }, { unique: true });
+categorySchema.index({ slug: 1 }, { unique: true });
+
+export const Category = mongoose.model("Category", categorySchema);
+
+```
+
+---
+
+### FILE: ./src/models/User.js
+```js
+import mongoose from "mongoose";
+import { addressSchema } from "../schemas/common/address.js";
+
+const userSchema = new mongoose.Schema(
+  {
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true, // Automatically indexes and ensures uniqueness
+      lowercase: true,
+      trim: true,
+    },
+    passwordHash: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["customer", "seller", "admin"],
+      default: "customer",
+      index: true, // Indexed for quick authorization and dashboard filtering
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    shippingAddresses: {
+      type: [addressSchema],
+      default: [],
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "users",
+  },
+);
+
+// Virtual to get full name easily in your application
+userSchema.virtual("fullName").get(function () {
+  return `${this.firstName} ${this.lastName}`;
+});
+
+export const User = mongoose.model("User", userSchema);
+
+```
+
+---
+
+### FILE: ./src/models/Seller.js
+```js
+import mongoose from "mongoose";
+import { addressSchema } from "../schemas/common/address.js";
+
+const sellerSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true, // One user can only own one merchant store profile
+    },
+    storeName: {
+      type: String,
+      required: true,
+      unique: true, // Prevents duplicate storefront names
+      trim: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true, // Used for routing (e.g., /stores/awesome-phones-inc)
+      lowercase: true,
+      trim: true,
+    },
+    businessAddress: {
+      type: addressSchema,
+      required: true,
+    },
+    verificationStatus: {
+      type: String,
+      enum: ["pending", "verified", "suspended"],
+      default: "pending",
+      index: true, // High performance filtering for public marketplace search
+    },
+    rating: {
+      average: { type: Number, default: 0 },
+      count: { type: Number, default: 0 },
+    },
+  },
+  {
+    timestamps: true,
+    collection: "sellers",
+  },
+);
+
+export const Seller = mongoose.model("Seller", sellerSchema);
+
+```
+
+---
+
+### FILE: ./src/models/Cart.js
+```js
+import mongoose from "mongoose";
+
+const cartItemSchema = new mongoose.Schema(
+  {
+    listingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Listing",
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: [1, "Quantity cannot be less than 1."],
+      default: 1,
+    },
+  },
+  { _id: false }, // No separate ID needed for sub-documents in a cart
+);
+
+const cartSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true, // Guarantees exactly one active cart instance per user account
+    },
+    items: [cartItemSchema],
+  },
+  {
+    timestamps: true,
+    collection: "carts",
+  },
+);
+
+export const Cart = mongoose.model("Cart", cartSchema);
+
+```
+
+---
+
+### FILE: ./src/models/Order.js
+```js
+import mongoose from "mongoose";
+import { addressSchema, moneySchema } from "#schemas";
+
+const orderItemSchema = new mongoose.Schema(
+  {
+    listingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Listing",
+      required: true,
+    },
+    sellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seller",
+      required: true,
+      index: true, // Crucial index for seller dashboard order processing pipelines
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    // Historical price snapshot using your moneySchema (amount + currency)
+    priceAtPurchase: {
+      type: moneySchema,
+      required: true,
+    },
+  },
+  { _id: false },
+);
+
+const orderSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true, // Indexed so customers can instantly load their order history page
+    },
+    items: {
+      type: [orderItemSchema],
+      validate: [
+        (v) => v.length > 0,
+        "An order must contain at least one item.",
+      ],
+    },
+    totalAmount: {
+      type: moneySchema,
+      required: true,
+    },
+    shippingAddress: {
+      type: addressSchema,
+      required: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
+      index: true,
+    },
+    orderStatus: {
+      type: String,
+      enum: ["processing", "shipped", "delivered", "cancelled"],
+      default: "processing",
+      index: true,
+    },
+    trackingNumber: {
+      type: String,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "orders",
+  },
+);
+
+export const Order = mongoose.model("Order", orderSchema);
+
+```
+
+---
+
+### FILE: ./src/models/Review.js
+```js
+import mongoose from "mongoose";
+
+const reviewSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true, // Indexed so a user can see their review history history
+    },
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+      index: true, // Crucial for aggregating the average score on product detail pages
+    },
+    listingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Listing",
+      required: true, // Links review to an authentic transactional event
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: [1, "Rating must be at least 1 star."],
+      max: [5, "Rating cannot exceed 5 stars."],
+    },
+    title: {
+      type: String,
+      trim: true,
+      maxlength: [100, "Title is too long."],
+      default: "",
+    },
+    comment: {
+      type: String,
+      trim: true,
+      maxlength: [2000, "Comment cannot exceed 2000 characters."],
+      default: "",
+    },
+    isVerifiedPurchase: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "reviews",
+  },
+);
+
+// Enforce a strict unique compound constraint:
+// A single user can only submit exactly ONE review per product item.
+reviewSchema.index({ userId: 1, productId: 1 }, { unique: true });
+
+export const Review = mongoose.model("Review", reviewSchema);
+
+```
+
+---
+
+### FILE: ./src/routes/index.js
+```js
+export * from "./test-router.js";
+export * from "./api-v1-router.js";
+export * from "./cart.router.js";
+export * from "./catalog.router.js";
+export * from "./checkout.router.js";
+export * from "./seller.router.js";
+
+```
+
+---
+
+### FILE: ./src/routes/catalog.router.js
+```js
+import express from "express";
+import { CatalogController } from "#controllers";
+
+// Import your authentication & authorization middlewares from your middlewares folder
+// import { authenticate, authorizeRoles } from "#middlewares";
+
+const catalogController = new CatalogController();
+export const catalogRouter = express.Router();
+
+// 🔒 FORCE AUTHENTICATION: No public access to raw Catalog APIs.
+// catalogRouter.use(authenticate);
+
+// ==========================================
+// 🔍 SELLER & ADMIN: READ-ONLY CATALOG ENGINES
+// ==========================================
+
+// GET /api/v1/catalog/search - Live fuzzy/typeahead suggestions (Sellers & Admins only)
+catalogRouter.get(
+  "/search",
+  // authorizeRoles("seller", "admin"),
+  catalogController.getLiveSuggestions,
+);
+
+// GET /api/v1/catalog/lookup/:gtin - Normal static lookup by standard GTIN barcode (Sellers & Admins only)
+catalogRouter.get(
+  "/lookup/:gtin",
+  // authorizeRoles("seller", "admin"),
+  catalogController.getGtinLookup,
+);
+
+// ==========================================
+// 🛠️ ADMIN ONLY: MASTER CATALOG WRITES (CRUD)
+// ==========================================
+
+// // POST /api/v1/catalog - Add a new standardized global model to the Master Catalog
+// catalogRouter.post(
+//   "/",
+//   authorizeRoles("admin"),
+//   catalogController.createCatalogProduct,
+// );
+//
+// // PATCH /api/v1/catalog/:id - Modify standardized specs or metadata for a catalog item
+// catalogRouter.patch(
+//   "/:id",
+//   authorizeRoles("admin"),
+//   catalogController.updateCatalogProduct,
+// );
+//
+// // DELETE /api/v1/catalog/:id - Hard or soft delete a global model from the catalog
+// catalogRouter.delete(
+//   "/:id",
+//   authorizeRoles("admin"),
+//   catalogController.deleteCatalogProduct,
+// );
+
+```
+
+---
+
+### FILE: ./src/routes/seller.router.js
+```js
+
+```
+
+---
+
+### FILE: ./src/routes/cart.router.js
+```js
+
+```
+
+---
+
+### FILE: ./src/routes/checkout.router.js
+```js
+
+```
+
+---
+
+### FILE: ./src/routes/api-v1-router.js
+```js
+import express from "express";
+
+import { catalogRouter } from "./catalog.router.js";
+
+console.log("this is the apiV1Router");
+
+export const apiV1Router = express.Router();
+apiV1Router.use("/catalog", catalogRouter);
+
+```
+
+---
+
+### FILE: ./src/server.js
+```js
+// server.js
+import http from "node:http";
+import { app } from "#app";
+import { logger } from "#utils";
+import { connectMongoDB } from "#config";
+
+export const startServer = async ({ port, appName, appUrl, databaseUrl }) => {
+  const httpServer = http.createServer(app);
+  let isShuttingDown = false;
+
+  httpServer.on("listening", () => {
+    // logger.info({ service: "auth" }, "NODE_LOKI_TEST");
+    logger.info(
+      { appName, appUrl },
+      "🚀 %s server running at %s",
+      appName,
+      appUrl,
+    );
+  });
+
+  httpServer.on("error", (error) => {
+    if (error.syscall !== "listen") {
+      logger.error({ err: error }, "Server socket runtime error encountered");
+      return;
+    }
+
+    switch (error.code) {
+      case "EADDRINUSE":
+        logger.error({ port }, `Port ${port} is already in use`);
+        break;
+      case "EACCES":
+        logger.error({ port }, `Port ${port} requires elevated privileges`);
+        break;
+      default:
+        logger.error(
+          { err: error },
+          "Failed to start server due to system network error",
+        );
+    }
+    process.exit(1);
+  });
+
+  const shutdown = (signalOrError) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    logger.warn(`\nReceived ${signalOrError}. Closing active connections...`);
+
+    const forceQuitTimeout = setTimeout(() => {
+      logger.error(
+        "Forced shutdown initiated: Active connections did not close in time.",
+      );
+      process.exit(1);
+    }, 10000);
+
+    httpServer.close((err) => {
+      clearTimeout(forceQuitTimeout);
+      if (err) {
+        logger.error({ err }, "Error occurred while closing HTTP server");
+        process.exit(1);
+      }
+      logger.info("HTTP server closed cleanly. Process exiting.");
+      process.exit(0);
+    });
+  };
+
+  process.on("uncaughtException", (error) => {
+    logger.error({ err: error }, `Uncaught Exception caught: ${error.message}`);
+    shutdown("uncaughtException");
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    logger.error({ err: reason }, `Unhandled Promise Rejection caught`);
+    shutdown("unhandledRejection");
+  });
+
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+  try {
+    await connectMongoDB(databaseUrl);
+
+    httpServer.listen(port, "0.0.0.0");
+  } catch (error) {
+    logger.error({ err: error }, "Failed to initialize server requirements");
+    process.exit(1);
+  }
+};
+
+```
+
+---
+
+### FILE: ./src/services/index.js
+```js
+export * from "./catalog.service.js";
+// export * from "./product.service.js";
+// export * from "./listing.service.js";
+
+```
+
+---
+
+### FILE: ./src/services/catalog.service.js
+```js
+import { Product } from "#models";
+
+export const CatalogService = {
+  /**
+   * High-performance search optimized for sellers matching against the global master catalog
+   * Updates: Executes case-insensitive fuzzy text matching exclusively on the unique product slug.
+   */
+  async searchMasterCatalog({ query, page = 1, limit = 10 }) {
+    const skip = (page - 1) * limit;
+
+    // Base criteria: Sellers should only see verified, non-deleted catalog items
+    const filter = {
+      "metadata.isActive": true,
+      "metadata.isDeleted": false,
+    };
+
+    if (query) {
+      const trimmedQuery = query.trim();
+
+      // Fuzzy search on the slug (case-insensitive, partial matching)
+      // e.g., searching "iconia" will match "acer-iconia-talk-s"
+      filter["identity.slug"] = { $regex: trimmedQuery, $options: "i" };
+    }
+
+    // Run query and counter in parallel to maximize throughput
+    const [products, totalItems] = await Promise.all([
+      Product.find(filter)
+        .populate("identity.brandId", "name logo")
+        .select("identity catalog media") // Exclude deep hardware specs to keep payload light for selection grid
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(filter),
+    ]);
+
+    return {
+      products,
+      pagination: {
+        totalItems,
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalItems / limit),
+      },
+    };
+  },
+};
+
+```
+
+---
+
+### FILE: ./src/utils/index.js
+```js
+export * from "./logger.js";
+
+```
+
+---
+
+### FILE: ./src/utils/logger.js
+```js
+import pino from "pino";
+import { env } from "#config";
+
+const transport =
+  env.NODE_ENV === "development"
+    ? pino.transport({
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+          translateTime: "SYS:standard",
+          ignore: "pid,hostname,app,env",
+        },
+      })
+    : undefined;
+
+export const logger = pino(
+  {
+    level: env.LOG_LEVEL || "info",
+
+    timestamp: pino.stdTimeFunctions.isoTime,
+
+    base: {
+      app: env.APP_NAME,
+      env: env.NODE_ENV,
+      pid: process.pid,
+    },
+
+    formatters: {
+      level: (label) => ({ level: label.toUpperCase() }),
+    },
+
+    redact: {
+      paths: [
+        "password",
+        "confirmPassword",
+        "accessToken",
+        "refreshToken",
+        "token",
+        "authorization",
+        "req.headers.authorization",
+        "req.headers.cookie",
+        "cookies",
+        "*.password",
+        "*.confirmPassword",
+        "*.*.password",
+        "*.token",
+        "*.accessToken",
+        "*.refreshToken",
+      ],
+      censor: "[REDACTED]",
+    },
+
+    serializers: {
+      err: pino.stdSerializers.err,
+      req: pino.stdSerializers.req,
+      res: pino.stdSerializers.res,
+    },
+  },
+  transport,
+);
+
+```
+
+---
+
+### FILE: ./src/validators/index.js
+```js
+
+```
+
+---
+
+### FILE: ./src/schemas/index.js
+```js
+export * from "./product/product.schema.js";
+export * from "./common/address.js";
+export * from "./common/dimensions.js";
+export * from "./common/image.js";
+export * from "./common/money.js";
+export * from "./common/seo.js";
+export * from "./common/timestamps.js";
+
+export * from "./product/product.schema.js";
+
+export * from "./listing/index.js";
+
+```
+
+---
+
+### FILE: ./src/schemas/product/identity.js
+```js
+// src/schemas/product/identity.schema.js
+
+import mongoose from "mongoose";
+
+export const identitySchema = new mongoose.Schema(
+  {
+    gtin: {
+      type: String,
+      required: true,
+      trim: true,
+      immutable: true,
+    },
+
+    sku: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
+      immutable: true,
+    },
+
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      // index: true,
+    },
+
+    brandId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+      required: true,
+      immutable: true,
+    },
+
+    model: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/product/catalog.js
+```js
+// src/schemas/product/catalog.schema.js
+
+import mongoose from "mongoose";
+
+const releaseSchema = new mongoose.Schema(
+  {
+    year: {
+      type: Number,
+      min: 1970,
+      max: 2100,
+    },
+
+    month: {
+      type: Number,
+      min: 1,
+      max: 12,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+export const catalogSchema = new mongoose.Schema(
+  {
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
+
+    release: {
+      announced: releaseSchema,
+
+      released: releaseSchema,
+    },
+
+    status: {
+      type: String,
+      required: true,
+      enum: ["coming_soon", "available", "discontinued", "cancelled"],
+      lowercase: true,
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/product/media.js
+```js
+// src/schemas/product/media.schema.js
+
+import mongoose from "mongoose";
+
+const imageSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      required: true,
+      enum: [
+        "thumbnail",
+        "front",
+        "back",
+        "left",
+        "right",
+        "top",
+        "bottom",
+        "gallery",
+      ],
+    },
+
+    url: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    alt: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+export const mediaSchema = new mongoose.Schema(
+  {
+    images: {
+      type: [imageSchema],
+      default: [],
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+export default mediaSchema;
+
+```
+
+---
+
+### FILE: ./src/schemas/product/metadata.js
+```js
+// src/schemas/product/metadata.schema.js
+
+import mongoose from "mongoose";
+
+export const metadataSchema = new mongoose.Schema(
+  {
+    source: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    importedAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/product/product.schema.js
+```js
+import mongoose from "mongoose";
+
+import {
+  identitySchema,
+  catalogSchema,
+  mediaSchema,
+  metadataSchema,
+} from "./index.js";
+
+import { specificationsSchema } from "../specifications/specification.schema.js";
+
+export const productSchema = new mongoose.Schema(
+  {
+    identity: identitySchema,
+    catalog: catalogSchema,
+    specifications: specificationsSchema,
+    media: mediaSchema,
+    metadata: metadataSchema,
+  },
+  {
+    timestamps: true,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/product/index.js
+```js
+export * from "./catalog.js";
+export * from "./identity.js";
+export * from "./media.js";
+export * from "./metadata.js";
+
+```
+
+---
+
+### FILE: ./src/schemas/listing/pricing.js
+```js
+import mongoose from "mongoose";
+
+export const pricingSchema = new mongoose.Schema(
+  {
+    sellingPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    mrp: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    currency: {
+      type: String,
+      required: true,
+      uppercase: true,
+      default: "INR",
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/listing/inventory.js
+```js
+import mongoose from "mongoose";
+
+export const inventorySchema = new mongoose.Schema(
+  {
+    quantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    reserved: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    lowStockThreshold: {
+      type: Number,
+      default: 5,
+      min: 0,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/listing/shipping.js
+```js
+import mongoose from "mongoose";
+
+export const shippingSchema = new mongoose.Schema(
+  {
+    freeShipping: {
+      type: Boolean,
+      default: false,
+    },
+
+    shippingCharge: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    estimatedDeliveryDays: {
+      min: {
+        type: Number,
+        min: 0,
+      },
+
+      max: {
+        type: Number,
+        min: 0,
+      },
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/listing/status.js
+```js
+import mongoose from "mongoose";
+
+export const statusSchema = new mongoose.Schema(
+  {
+    state: {
+      type: String,
+      required: true,
+      enum: ["active", "inactive", "out_of_stock", "draft", "archived"],
+      default: "active",
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/listing/index.js
+```js
+export * from "./inventory.js";
+export * from "./pricing.js";
+export * from "./shipping.js";
+export * from "./status.js";
+
+```
+
+---
+
+### FILE: ./src/schemas/common/address.js
+```js
+import mongoose from "mongoose";
+
+export const addressSchema = new mongoose.Schema(
+  {
+    street: { type: String, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true },
+    postalCode: { type: String, required: true, trim: true },
+    country: { type: String, required: true, trim: true, default: "IN" },
+    isDefault: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/common/image.js
+```js
+import mongoose from "mongoose";
+
+export const imageSchema = new mongoose.Schema(
+  {
+    url: { type: String, required: true, trim: true },
+    alt: { type: String, trim: true, default: "" },
+    type: {
+      type: String,
+      enum: ["thumbnail", "hero", "gallery", "avatar"],
+      default: "gallery",
+    },
+  },
+  { _id: false },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/common/money.js
+```js
+import mongoose from "mongoose";
+
+export const moneySchema = new mongoose.Schema(
+  {
+    amount: {
+      type: Number,
+      required: true,
+      min: [0, "Amount cannot be negative."],
+    },
+    currency: {
+      type: String,
+      required: true,
+      uppercase: true,
+      trim: true,
+      default: "INR",
+    },
+  },
+  {
+    _id: false, // Prevents generating an unnecessary _id for embedded price objects
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/common/dimensions.js
+```js
+import mongoose from "mongoose";
+
+export const dimensionsSchema = new mongoose.Schema(
+  {
+    heightMm: { type: Number, default: null, min: 0 },
+    widthMm: { type: Number, default: null, min: 0 },
+    thicknessMm: { type: Number, default: null, min: 0 },
+  },
+  { _id: false },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/common/seo.js
+```js
+import mongoose from "mongoose";
+
+export const seoSchema = new mongoose.Schema(
+  {
+    metaTitle: { type: String, trim: true, maxlength: 70, default: "" },
+    metaDescription: { type: String, trim: true, maxlength: 160, default: "" },
+    keywords: [{ type: String, trim: true }],
+  },
+  { _id: false },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/common/timestamps.js
+```js
+import mongoose from "mongoose";
+
+export const timestampsSchema = new mongoose.Schema(
+  {
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/network.js
+```js
+// src/schemas/product/specifications/network.schema.js
+
+import mongoose from "mongoose";
+
+const bandSchema = new mongoose.Schema(
+  {
+    generation: {
+      type: String,
+      enum: ["2G", "3G", "4G", "5G"],
+    },
+
+    band: String,
+
+    frequencyMHz: Number,
+  },
+  {
+    _id: false,
+  },
+);
+
+const speedSchema = new mongoose.Schema(
+  {
+    technology: String,
+
+    category: String,
+
+    downloadMbps: Number,
+
+    uploadMbps: Number,
+  },
+  {
+    _id: false,
+  },
+);
+
+export const networkSchema = new mongoose.Schema(
+  {
+    technologies: {
+      type: [String],
+      default: [],
+    },
+
+    bands: {
+      type: [bandSchema],
+      default: [],
+    },
+
+    speeds: {
+      type: [speedSchema],
+      default: [],
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/body.js
+```js
+// src/schemas/product/specifications/body.schema.js
+
+import mongoose from "mongoose";
+
+export const bodySchema = new mongoose.Schema(
+  {
+    dimensions: {
+      heightMm: Number,
+      widthMm: Number,
+      thicknessMm: Number,
+    },
+
+    weight: {
+      grams: Number,
+      ounces: Number,
+    },
+
+    colors: {
+      type: [String],
+      default: [],
+    },
+
+    sim: {
+      count: Number,
+
+      types: {
+        type: [String],
+        default: [],
+      },
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/display.js
+```js
+// src/schemas/product/specifications/display.schema.js
+
+import mongoose from "mongoose";
+
+export const displaySchema = new mongoose.Schema(
+  {
+    technology: {
+      type: String,
+      trim: true,
+    },
+
+    touchscreen: {
+      type: Boolean,
+      default: true,
+    },
+
+    colorDepth: {
+      type: String,
+      trim: true,
+    },
+
+    sizeInches: Number,
+
+    screenToBodyRatio: Number,
+
+    resolution: {
+      width: Number,
+      height: Number,
+    },
+
+    pixelDensityPpi: Number,
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/platform.js
+```js
+// src/schemas/product/specifications/platform.schema.js
+
+import mongoose from "mongoose";
+
+export const platformSchema = new mongoose.Schema(
+  {
+    operatingSystem: {
+      name: String,
+
+      version: String,
+
+      codename: String,
+    },
+
+    chipset: {
+      manufacturer: String,
+
+      model: String,
+    },
+
+    cpu: {
+      architecture: String,
+
+      cores: Number,
+
+      clockSpeedGHz: Number,
+    },
+
+    gpu: {
+      manufacturer: String,
+
+      model: String,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/memory.js
+```js
+// src/schemas/product/specifications/memory.schema.js
+
+import mongoose from "mongoose";
+
+export const memorySchema = new mongoose.Schema(
+  {
+    ramMb: Number,
+
+    storageOptionsMb: {
+      type: [Number],
+      default: [],
+    },
+
+    expandable: {
+      supported: {
+        type: Boolean,
+        default: false,
+      },
+
+      // Crucial Fix: Wrap the literal 'type' field so Mongoose handles it as a string attribute
+      type: {
+        type: String,
+        default: null,
+      },
+
+      maxMb: Number,
+
+      dedicatedSlot: {
+        type: Boolean,
+        default: false,
+      },
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/camera.js
+```js
+// src/schemas/product/specifications/camera.schema.js
+
+import mongoose from "mongoose";
+
+const cameraUnitSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      trim: true,
+    },
+
+    resolutionMp: {
+      type: Number,
+      min: 0,
+    },
+
+    aperture: {
+      type: Number,
+      min: 0,
+    },
+
+    autofocus: {
+      type: Boolean,
+      default: false,
+    },
+
+    opticalImageStabilization: {
+      type: Boolean,
+      default: false,
+    },
+
+    focalLengthMm: Number,
+
+    features: {
+      type: [String],
+      default: [],
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+export const cameraSchema = new mongoose.Schema(
+  {
+    rear: {
+      type: [cameraUnitSchema],
+      default: [],
+    },
+
+    front: {
+      type: [cameraUnitSchema],
+      default: [],
+    },
+
+    rearVideo: {
+      type: [String],
+      default: [],
+    },
+
+    frontVideo: {
+      type: [String],
+      default: [],
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/audio.js
+```js
+// src/schemas/product/specifications/audio.schema.js
+
+import mongoose from "mongoose";
+
+export const audioSchema = new mongoose.Schema(
+  {
+    loudSpeaker: {
+      type: Boolean,
+      default: false,
+    },
+
+    audioJack: {
+      type: Boolean,
+      default: false,
+    },
+
+    radio: {
+      type: String,
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/connectivity.js
+```js
+// src/schemas/product/specifications/connectivity.schema.js
+
+import mongoose from "mongoose";
+
+export const connectivitySchema = new mongoose.Schema(
+  {
+    wifi: {
+      standards: {
+        type: [String],
+        default: [],
+      },
+
+      wifiDirect: {
+        type: Boolean,
+        default: false,
+      },
+
+      hotspot: {
+        type: Boolean,
+        default: false,
+      },
+    },
+
+    bluetooth: {
+      version: String,
+
+      profiles: {
+        type: [String],
+        default: [],
+      },
+    },
+
+    positioning: {
+      supported: {
+        type: Boolean,
+        default: false,
+      },
+
+      systems: {
+        type: [String],
+        default: [],
+      },
+    },
+
+    nfc: {
+      type: Boolean,
+      default: false,
+    },
+
+    infrared: {
+      type: Boolean,
+      default: false,
+    },
+
+    usb: {
+      connector: String,
+
+      version: String,
+
+      features: {
+        type: [String],
+        default: [],
+      },
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/battery.js
+```js
+// src/schemas/product/specifications/battery.schema.js
+
+import mongoose from "mongoose";
+
+export const batterySchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      trim: true,
+    },
+
+    capacityMah: {
+      type: Number,
+      min: 0,
+    },
+
+    energyWh: {
+      type: Number,
+      min: 0,
+    },
+
+    removable: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/sensor.js
+```js
+// src/schemas/product/specifications/sensor.schema.js
+
+import mongoose from "mongoose";
+
+export const sensorSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/index.js
+```js
+export * from "./audio.js";
+export * from "./battery.js";
+export * from "./body.js";
+export * from "./camera.js";
+export * from "./connectivity.js";
+export * from "./display.js";
+export * from "./memory.js";
+export * from "./network.js";
+export * from "./platform.js";
+export * from "./sensor.js";
+
+```
+
+---
+
+### FILE: ./src/schemas/specifications/specification.schema.js
+```js
+import mongoose from "mongoose";
+import {
+  networkSchema,
+  bodySchema,
+  displaySchema,
+  platformSchema,
+  memorySchema,
+  cameraSchema,
+  audioSchema,
+  connectivitySchema,
+  batterySchema,
+  sensorSchema,
+} from "./index.js";
+
+export const specificationsSchema = new mongoose.Schema(
+  {
+    network: networkSchema,
+    body: bodySchema,
+    display: displaySchema,
+    platform: platformSchema,
+    memory: memorySchema,
+    camera: cameraSchema,
+    audio: audioSchema,
+    connectivity: connectivitySchema,
+    battery: batterySchema,
+    sensors: [sensorSchema],
+  },
+  {
+    _id: false,
+  },
+);
+
+```
+
+---
+
+### FILE: ./.env
+```text
+APP_NAME=ecommerce_app 
+NODE_ENV=development
+PORT=3000
+APP_URL=http://localhost:3000
+MONGODB_URL=mongodb://ecommerce_app_dbuser:ecommerce_app_dbuser_2708@ecommerce_mongodb_server:27017/ecommerce_app
+LOG_LEVEL=info
+
+```
+
+---
+
+### FILE: ./.env.example
+```text
+
+```
+
+---
+
+### FILE: ./tests/test-search.js
+```js
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+
+import { CatalogService } from "#services"; // Adjust path as needed
+
+dotenv.config();
+
+const env = {
+  APP_NAME: process.env.APP_NAME,
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
+  APP_URL: process.env.APP_URL,
+  MONGODB_URL:
+    "mongodb://ecommerce_app_dbuser:ecommerce_app_dbuser_2708@localhost:27017/ecommerce_app",
+  LOG_LEVEL: process.env.LOG_LEVEL,
+};
+
+console.log(env);
+
+async function runTest() {
+  try {
+    // 1. Connect to your test/development database
+    // Replace with your actual MongoDB connection string
+    await mongoose.connect(env.MONGODB_URL);
+    console.log("Connected to MongoDB successfully.\n");
+
+    // 2. Define the search term you want to test (e.g., "zest", "tab", "acer")
+    const testQuery = "samsung galaxy";
+    console.log(`🔍 Searching for slugs matching: "${testQuery}"...`);
+
+    // 3. Call the service function
+    const result = await CatalogService.searchMasterCatalog({
+      query: testQuery,
+      page: 1,
+      limit: 5,
+    });
+
+    // 4. Log out the results nicely
+    console.log("\n--- SEARCH RESULTS ---");
+    console.log(`Total Matches Found: ${result.pagination.totalItems}`);
+
+    if (result.products.length === 0) {
+      console.log("❌ No products matched that slug.");
+    } else {
+      result.products.forEach((product, index) => {
+        console.log(
+          `[${index + 1}] Slug: ${product.identity?.slug} | Model: ${product.identity?.model}`,
+        );
+      });
+    }
+  } catch (error) {
+    console.error("Test failed with error:", error);
+  } finally {
+    // Always close the connection when done
+    await mongoose.disconnect();
+    console.log("\nDisconnected from MongoDB.");
+  }
+}
+
+runTest();
+
+```
+
+---
+
+### FILE: ./.gitignore
+```text
+node_modules/
+.env
+
+```
+
+---
+
+### FILE: ./README.md
+```md
+
+```
+
+---
+
+### FILE: ./dump_context.sh
+```text
+#!/usr/bin/env bash
+
+OUTPUT_FILE="llm_codebase_context.txt"
+
+# 1. Clear out any previous dump files
+rm -f "$OUTPUT_FILE"
+
+echo "=========================================================================" >> "$OUTPUT_FILE"
+echo "PROJECT CONTEXT SUMMARY" >> "$OUTPUT_FILE"
+echo "Generated on: $(date)" >> "$OUTPUT_FILE"
+echo "=========================================================================" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# 2. Append the visual directory tree structure using standard 'find' commands
+echo "## PROJECT TREE STRUCTURE" >> "$OUTPUT_FILE"
+echo "\`\`\`text" >> "$OUTPUT_FILE"
+if command -v eza &> /dev/null; then
+    eza --tree --ignore-glob 'node_modules|.git' >> "$OUTPUT_FILE"
+else
+    find . -not -path '*/.*' -not -path './node_modules*' -not -path './architecture*' | sort | sed 's/[^background\/]*\//|--/g' >> "$OUTPUT_FILE"
+fi
+echo "\`\`\`" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+echo "## SOURCE CODES AND FILES" >> "$OUTPUT_FILE"
+echo "=========================================================================" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# 3. Find and loop through target source files
+# This skips node_modules, git assets, binary architecture assets, and heavy raw .json / data structures
+find . -type f \
+    -not -path '*/node_modules/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/architecture/*' \
+    -not -path '*/scripts/seed/data/*' \
+    -not -path '*/scripts/*' \
+    -not -path '*/src/routes/test-router.js' \
+    -not -name "$OUTPUT_FILE" \
+    -not -name "package-lock.json" \
+    -not -name "dump-context.sh" | while read -r file; do
+
+    # Determine the file extension for markdown formatting syntax highlighting
+    ext="${file##*.}"
+    if [ "$ext" = "js" ] || [ "$ext" = "json" ] || [ "$ext" = "yml" ] || [ "$ext" = "md" ]; then
+        lang="$ext"
+    else
+        lang="text"
+    fi
+
+    echo "### FILE: $file" >> "$OUTPUT_FILE"
+    echo "\`\`\`$lang" >> "$OUTPUT_FILE"
+    cat "$file" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    echo "\`\`\`" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    echo "---" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+done
+
+echo "Context extraction complete! File generated: $OUTPUT_FILE"
+
+```
+
+---
+
