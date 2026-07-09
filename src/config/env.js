@@ -1,14 +1,5 @@
 import joi from "joi";
 
-console.log({
-  APP_NAME: process.env.APP_NAME,
-  NODE_ENV: process.env.NODE_ENV,
-  PORT: process.env.PORT,
-  APP_URL: process.env.APP_URL,
-  MONGODB_URL: process.env.MONGODB_URL,
-  LOG_LEVEL: process.env.LOG_LEVEL,
-});
-
 const envSchema = joi.object({
   NODE_ENV: joi.string().valid("development", "test", "production").required(),
 
@@ -19,6 +10,8 @@ const envSchema = joi.object({
   APP_URL: joi.string().uri().required(),
 
   MONGODB_URL: joi.string().uri().required(),
+
+  JWT_SECRET: joi.string().required(),
 
   LOG_LEVEL: joi
     .string()
@@ -43,4 +36,3 @@ if (error) {
 }
 
 export const env = Object.freeze(value);
-console.log(env);

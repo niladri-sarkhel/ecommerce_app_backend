@@ -37,11 +37,14 @@
   },
   "homepage": "https://github.com/Niladri-Sarkhel/e_commerce_backend#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "joi": "^18.2.1",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.2",
+    "nodemailer": "^9.0.3",
     "nodemon": "^3.1.14",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3"
