@@ -1,7 +1,36 @@
+import crypto from "node:crypto";
+
 import { logger } from "#utils";
+import { MailService } from "#services";
 
 import { Product, Brand, Category } from "#models";
+
+import { NOTIFICATION_TEMPLATES, MAIL_STRINGS } from "#config";
+
+const templateKey = NOTIFICATION_TEMPLATES.EMAIL_VERIFICATION;
+
 export const testController = {
+  sendEmail: async (req, res, next) => {
+    try {
+      const otp = crypto.randomInt(100000, 1000000);
+
+      await MailService.sendEmail(
+        "niladri.sarkhel.dev@gmail.com",
+        otp,
+        MAIL_STRINGS[templateKey].SUBJECT,
+        MAIL_STRINGS[templateKey].PURPOSE_TEXT,
+      );
+
+      return res.status(200).json({
+        status: "success",
+        message: "Email sent successfully.",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      return next(error);
+    }
+  },
+
   ping: (req, res) => {
     logger.info(
       { controller: "testController", func: "ping" },

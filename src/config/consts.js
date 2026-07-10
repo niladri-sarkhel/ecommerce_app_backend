@@ -98,11 +98,42 @@ export const AUDIT_ACTIONS = Object.freeze({
   PAYMENT_EXECUTE: "payment.execute",
 });
 
-// --- 6. Event Notification Channels ---
 export const NOTIFICATION_TEMPLATES = Object.freeze({
   WELCOME_EMAIL: "WELCOME_EMAIL",
   EMAIL_VERIFICATION: "EMAIL_VERIFICATION",
   PASSWORD_RESET: "PASSWORD_RESET",
   ORDER_CONFIRMATION: "ORDER_CONFIRMATION",
   LOW_STOCK_ALERT: "LOW_STOCK_ALERT",
+});
+
+export const MAIL_STRINGS = Object.freeze({
+  [NOTIFICATION_TEMPLATES.WELCOME_EMAIL]: Object.freeze({
+    SUBJECT: "Welcome to Global Marketplace! 🎉",
+    PURPOSE_TEXT:
+      "Thank you for joining our ecosystem. Your digital account profile has been securely instantiated and configured.",
+  }),
+
+  [NOTIFICATION_TEMPLATES.EMAIL_VERIFICATION]: Object.freeze({
+    SUBJECT: "Global Marketplace - Verify Your Account",
+    PURPOSE_TEXT:
+      "Thank you for joining our ecosystem. Please use the verification token below to activate your new account profile and access secure operations.",
+  }),
+
+  [NOTIFICATION_TEMPLATES.PASSWORD_RESET]: Object.freeze({
+    SUBJECT: "Global Marketplace - Reset Your Password",
+    PURPOSE_TEXT:
+      "We received an explicit request to re-secure and modify your account access credentials. If you did not initiate this configuration, please secure your profile.",
+  }),
+
+  [NOTIFICATION_TEMPLATES.ORDER_CONFIRMATION]: Object.freeze({
+    SUBJECT: "Global Marketplace - Order Received! 📦",
+    PURPOSE_TEXT:
+      "Your transaction has been securely processed and recorded by our checkout engine. Please use the token sequence below to track your package delivery updates.",
+  }),
+
+  [NOTIFICATION_TEMPLATES.LOW_STOCK_ALERT]: Object.freeze({
+    SUBJECT: "Critical Alert: Merchant Inventory Depletion ⚠️",
+    PURPOSE_TEXT:
+      "Automated warehouse monitors tracked an immediate low-stock anomaly inside your store dashboard. Please use the authorization reference below to update inventory allocations.",
+  }),
 });

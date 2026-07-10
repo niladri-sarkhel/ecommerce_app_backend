@@ -15,7 +15,8 @@ const env = Object.freeze({
   SMTP_PORT: 587,
   SMTP_USER: "fastfone.shop@gmail.com",
   SMTP_PASS: "thgn qvwv odfz hvxi",
-  SMTP_FROM: "FastPhone <fastphone@gmail.com>",
+  SMTP_FROM: "FastPhone <fastfone.shop@gmail.com>",
+  SMTP_TO: "niladri.sarkhel.dev@gmail.com",
 });
 
 const transporter = nodemailer.createTransport({
@@ -28,12 +29,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-async function sendEmail() {
-  html = html.replace("{{OTP}}", "123456");
+async function sendEmail(to, otp) {
+  html = html.replace("{{OTP}}", otp);
 
   await transporter.sendMail({
     from: env.SMTP_FROM,
-    to: env.SMTP_USER,
+    to: to,
     subject: "Global Marketplace - Test Email",
     html,
   });
@@ -41,4 +42,4 @@ async function sendEmail() {
   console.log("✅ Email sent successfully!");
 }
 
-sendEmail().catch(console.error);
+sendEmail(env.SMTP_TO, 12345).catch(console.error);

@@ -13,6 +13,18 @@ const envSchema = joi.object({
 
   JWT_SECRET: joi.string().required(),
 
+  SMTP_HOST: joi.string().required(),
+
+  SMTP_PORT: joi.number().integer().port().required(),
+
+  SMTP_SECURE: joi.boolean().required(),
+
+  SMTP_USER: joi.string().required(),
+
+  SMTP_PASS: joi.string().required(),
+
+  SMTP_FROM: joi.string().required(),
+
   LOG_LEVEL: joi
     .string()
     .valid("fatal", "error", "warn", "info", "debug", "trace")
@@ -36,3 +48,6 @@ if (error) {
 }
 
 export const env = Object.freeze(value);
+
+console.log("env variables loaded successfully");
+console.log(env);

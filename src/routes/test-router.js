@@ -4,8 +4,6 @@ import { CatalogController, testController } from "#controllers";
 
 const catalogController = new CatalogController();
 
-console.log(catalogController);
-
 export const testRouter = express.Router();
 
 testRouter
@@ -13,4 +11,5 @@ testRouter
   .post("/echo", testController.echo)
   .get("/async", testController.asyncTest)
   .get("/test-db-catalog", testController.testDbCatalog)
-  .get("/catalog/search", catalogController.getLiveSuggestions);
+  .get("/catalog/search", catalogController.getLiveSuggestions)
+  .get("/send-mail", testController.sendEmail);
