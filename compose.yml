@@ -30,13 +30,14 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: adminfjsl90vvv
     volumes:
       - mongodb_data:/data/db
-    command: ["--replSet", "rs0", "--bind_ip_all"]
+      - ./mongo/mongodb-keyfile:/etc/mongo-keyfile:ro,Z
+      # This script runs automatically exactly once during first boot to configure the replica set
+      - ./mongo/init-rs.js:/docker-entrypoint-initdb.d/init-rs.js:ro
+    command: "mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile"
     networks:
       - ecommerce_net
     healthcheck:
-      test: >
-        mongosh --port 27017 --username blue --password adminfjsl90vvv --authenticationDatabase admin --eval 
-        "try { rs.status().ok } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'ecommerce_mongodb_server:27017'}]}).ok }"
+      test: mongosh --port 27017 --quiet --eval "db.adminCommand('ping').ok"
       interval: 10s
       timeout: 5s
       retries: 5
