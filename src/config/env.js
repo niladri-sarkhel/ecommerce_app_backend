@@ -29,6 +29,12 @@ const envSchema = joi.object({
     .string()
     .valid("fatal", "error", "warn", "info", "debug", "trace")
     .required(),
+
+  REDIS_HOST: joi.string().required(),
+
+  REDIS_PORT: joi.number().integer().port().required(),
+
+  REDIS_PASSWORD: joi.string().required(),
 });
 
 const { value, error } = envSchema.validate(process.env, {

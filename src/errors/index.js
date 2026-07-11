@@ -85,6 +85,29 @@ export class MailTemplateError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor({ message = "Access forbidden", errors = [] } = {}) {
+    super({
+      message,
+      statusCode: 403,
+      errors,
+    });
+  }
+}
+
+export class ExpiredSessionError extends AppError {
+  constructor({
+    message = "Session or verification code has expired",
+    errors = [],
+  } = {}) {
+    super({
+      message,
+      statusCode: 410, // 410 Gone specifies that the condition is permanent and time-bound
+      errors,
+    });
+  }
+}
+
 export const normalizeError = (err) => {
   return err instanceof AppError
     ? err

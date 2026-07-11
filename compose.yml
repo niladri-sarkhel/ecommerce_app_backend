@@ -13,6 +13,11 @@ services:
     stdin_open: true
     tty: true
     command: sh -c "tail -f /dev/null"
+    networks:
+      - ecommerce_net
+    depends_on:
+      ecommerce_mongodb_server:
+        condition: service_healthy
 
   ecommerce_mongodb_server:
     image: mongo:latest
@@ -25,6 +30,34 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: adminfjsl90vvv
     volumes:
       - mongodb_data:/data/db
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - ecommerce_net
+    healthcheck:
+      test: >
+        mongosh --port 27017 --username blue --password adminfjsl90vvv --authenticationDatabase admin --eval 
+        "try { rs.status().ok } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'ecommerce_mongodb_server:27017'}]}).ok }"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  ecommerce_redis_server:
+    image: redis:7-alpine
+    container_name: ecommerce_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ecommerce_redis_db_2708
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce_net
 
 volumes:
   mongodb_data:
+  redis_data:
+
+networks:
+  ecommerce_net:
+    driver: bridge
