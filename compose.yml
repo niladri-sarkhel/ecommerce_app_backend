@@ -22,6 +22,8 @@ services:
   ecommerce_mongodb_server:
     image: mongo:latest
     container_name: ecommerce_db
+    # user: "999:999" # Forces container to run as standard 'mongodb' user so permissions align
+    user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
     ports:
       - "27017:27017"
@@ -30,30 +32,17 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: adminfjsl90vvv
     volumes:
       - mongodb_data:/data/db
-      - ./mongo/mongodb-keyfile:/etc/mongo-keyfile:ro,Z
-      # This script runs automatically exactly once during first boot to configure the replica set
+      - ./mongo/mongo-keyfile:/etc/mongo/keyfile:ro
       - ./mongo/init-rs.js:/docker-entrypoint-initdb.d/init-rs.js:ro
-    command: "mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile"
+    command: "mongod --replSet rs0 --auth --keyFile /etc/mongo/keyfile --bind_ip_all"
     networks:
       - ecommerce_net
     healthcheck:
-      test: mongosh --port 27017 --quiet --eval "db.adminCommand('ping').ok"
+      test: 'mongosh -u blue -p adminfjsl90vvv --authenticationDatabase admin --quiet --eval "db.runCommand({ ping: 1 }).ok"'
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
-
-  ecommerce_redis_server:
-    image: redis:7-alpine
-    container_name: ecommerce_redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes --requirepass ecommerce_redis_db_2708
-    volumes:
-      - redis_data:/data
-    networks:
-      - ecommerce_net
+      start_period: 20s
 
 volumes:
   mongodb_data:

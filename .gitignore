@@ -1,3 +1,3 @@
 node_modules/
 .env
-mongo/mongodb-keyfile
+mongo/mongo-keyfile
