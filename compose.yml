@@ -1,4 +1,5 @@
 services:
+# nodejs server configuration
   ecommerce_node_server:
     image: node:26-alpine
     container_name: ecommerce_server
@@ -19,11 +20,12 @@ services:
       ecommerce_mongodb_server:
         condition: service_healthy
 
+# mongodb server configuration
   ecommerce_mongodb_server:
     image: mongo:latest
     container_name: ecommerce_db
     # user: "999:999" # Forces container to run as standard 'mongodb' user so permissions align
-    user: "${UID:-1000}:${GID:-1000}"
+    # user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
     ports:
       - "27017:27017"
@@ -32,9 +34,16 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: adminfjsl90vvv
     volumes:
       - mongodb_data:/data/db
-      - ./mongo/mongo-keyfile:/etc/mongo/keyfile:ro
-      - ./mongo/init-rs.js:/docker-entrypoint-initdb.d/init-rs.js:ro
-    command: "mongod --replSet rs0 --auth --keyFile /etc/mongo/keyfile --bind_ip_all"
+      # - ./mongo/mongo-keyfile:/etc/mongo/keyfile:ro,Z
+      # - ./mongo/init-rs.js:/docker-entrypoint-initdb.d/init-rs.js:ro,Z
+      - ./mongo:/etc/mongo:ro,Z
+    # command: "mongod --replSet rs0 --auth --keyFile /etc/mongo/keyfile --bind_ip_all"
+    command: >
+      mongod
+      --replSet rs0
+      --auth
+      --keyFile /etc/mongo/mongo-keyfile
+      --bind_ip_all
     networks:
       - ecommerce_net
     healthcheck:
@@ -43,6 +52,20 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+# redis db server configuration
+  ecommerce_redis_server:
+    image: redis:7-alpine
+    container_name: ecommerce_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ecommerce_redis_db_2708
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce_net
+
 
 volumes:
   mongodb_data:
