@@ -225,6 +225,22 @@ export class UserControllerClass {
       next(error); // Route errors directly into handleReqErrors middleware
     }
   };
+
+  // Inside class UserControllerClass ...
+  getProfile = async (req, res, next) => {
+    try {
+      const userId = req.user.id; // Extracted from AuthMiddleware token verification
+      const profileData = await UserService.getProfile(userId);
+
+      return res.status(200).json({
+        success: true,
+        data: profileData,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 // Inside class UserControllerClass ...

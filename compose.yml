@@ -24,34 +24,35 @@ services:
   ecommerce_mongodb_server:
     image: mongo:latest
     container_name: ecommerce_db
-    # user: "999:999" # Forces container to run as standard 'mongodb' user so permissions align
-    # user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
+
     ports:
       - "27017:27017"
+
     environment:
       MONGO_INITDB_ROOT_USERNAME: blue
       MONGO_INITDB_ROOT_PASSWORD: adminfjsl90vvv
+
     volumes:
       - mongodb_data:/data/db
-      # - ./mongo/mongo-keyfile:/etc/mongo/keyfile:ro,Z
-      # - ./mongo/init-rs.js:/docker-entrypoint-initdb.d/init-rs.js:ro,Z
       - ./mongo:/etc/mongo:ro,Z
-    # command: "mongod --replSet rs0 --auth --keyFile /etc/mongo/keyfile --bind_ip_all"
+
+    networks:
+      - ecommerce_net
+
     command: >
       mongod
       --replSet rs0
       --auth
       --keyFile /etc/mongo/mongo-keyfile
       --bind_ip_all
-    networks:
-      - ecommerce_net
+
     healthcheck:
-      test: 'mongosh -u blue -p adminfjsl90vvv --authenticationDatabase admin --quiet --eval "db.runCommand({ ping: 1 }).ok"'
-      interval: 10s
+      test: 'mongosh --port 27017 --eval "db.runCommand({ping: 1})" --quiet || exit 1'
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 5s
 
 # redis db server configuration
   ecommerce_redis_server:

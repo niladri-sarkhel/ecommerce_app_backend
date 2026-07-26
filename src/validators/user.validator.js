@@ -75,7 +75,7 @@ export class UserValidatorClass {
   updateAccount = Joi.object({
     firstName: Joi.string().min(2).max(50).trim().optional(),
     lastName: Joi.string().min(2).max(50).trim().optional(),
-    phoneNumber: this._phoneStr.allow(null).optional(),
+    // phoneNumber: this._phoneStr.allow(null).optional(),
     // shippingAddresses expects an array of validated address records matching your Mongoose array design
     shippingAddresses: Joi.array().items(this._addressObject).optional(),
   }).min(1); // Ensures that the client provides at least one property to drop into the change query
@@ -83,6 +83,25 @@ export class UserValidatorClass {
   upgradeToSeller = Joi.object({
     storeName: Joi.string().min(3).max(100).trim().required(),
     businessAddress: this._addressObject.required(),
+  });
+
+  initiateEmailUpdate = Joi.object({
+    newEmail: this._emailStr,
+  });
+
+  verifyEmailUpdate = Joi.object({
+    newEmail: this._emailStr,
+    otp: this._otpStr,
+  });
+
+  // 2. Phone Number Change Pipeline (Uses Email for OTP)
+  initiatePhoneUpdate = Joi.object({
+    newPhoneNumber: this._phoneStr.required(),
+  });
+
+  verifyPhoneUpdate = Joi.object({
+    newPhoneNumber: this._phoneStr.required(),
+    otp: this._otpStr,
   });
 }
 

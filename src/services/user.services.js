@@ -359,6 +359,29 @@ export class UserServiceClass {
       session.endSession();
     }
   }
+
+  getProfile = async (userId) => {
+    // Exclude passwordHash from the queried document
+    const user = await User.findById(userId).select("-passwordHash").lean();
+
+    if (!user || !user.isActive) {
+      throw new NotFoundError({
+        message: "User profile not found or inactive.",
+      });
+    }
+
+    let storeDetails = null;
+
+    // If user has upgraded, include their storefront metadata
+    if (user.role === "seller") {
+      storeDetails = await Seller.findOne({ userId }).lean();
+    }
+
+    return {
+      ...user,
+      sellerProfile: storeDetails,
+    };
+  };
 }
 
 export const UserService = new UserServiceClass();

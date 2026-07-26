@@ -83,3 +83,10 @@ userRouter.delete(
   AuthMiddleware.authorize(["customer"]),
   UserController.deleteAccount,
 );
+
+// Fetch authenticated user profile (Accessible by any active role)
+userRouter.get(
+  "/account",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  UserController.getProfile,
+);
