@@ -32,6 +32,36 @@ export class ValidateMiddlewareClass {
   };
 
   /**
+   * Generates a middleware function to dynamically intercept and validate URL route parameters (req.params)
+   * @param {Object} schema - The Joi schema to evaluate against req.params
+   */
+  params = (schema) => (req, res, next) => {
+    if (!schema) return next();
+
+    const { error, value } = schema.validate(req.params, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
+
+    if (error) {
+      const compiledErrors = error.details.map((detail) => ({
+        field: detail.path.join("."),
+        message: detail.message.replace(/['"]/g, ""),
+      }));
+
+      return res.status(400).json({
+        success: false,
+        message: "Request URL parameters structural validation failed.",
+        errors: compiledErrors,
+      });
+    }
+
+    // Reassign pristine validated parameters back to req.params
+    req.params = value;
+    next();
+  };
+
+  /**
    * Generates a middleware function to intercept, sanitize, and validate request headers
    * @param {Object} schema - The Joi schema to evaluate against req.headers
    */

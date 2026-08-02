@@ -143,6 +143,27 @@ export class UserValidatorClass {
     otp: this._otpStr,
     newPassword: this._passwordStr,
   });
+
+  // ==========================================
+  // SHIPPING ADDRESS VALIDATION SCHEMAS
+  // ==========================================
+
+  createAddress = this._addressObject.keys({
+    isDefault: Joi.boolean().optional().default(false),
+  });
+
+  updateAddress = this._addressObject
+    .fork(["street", "city", "state", "postalCode", "country"], (schema) =>
+      schema.optional(),
+    )
+    .keys({
+      isDefault: Joi.boolean().optional(),
+    })
+    .min(1);
+
+  addressParams = Joi.object({
+    addressId: this._objectIdStr.required(),
+  });
 }
 
 export const UserValidator = new UserValidatorClass();

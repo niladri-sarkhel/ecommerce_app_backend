@@ -182,3 +182,47 @@ userRouter.post(
   ValidateMiddleware.body(UserValidator.confirmPasswordChange),
   UserController.confirmPasswordChange,
 );
+
+// ----------------------------------------------------
+// Shipping Address Routes
+// ----------------------------------------------------
+
+// 1. Create Address
+userRouter.post(
+  "/account/addresses",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.createAddress),
+  UserController.addAddress,
+);
+
+// 2. Read All Addresses
+userRouter.get(
+  "/account/addresses",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  UserController.getAddresses,
+);
+
+// 3. Update Address
+userRouter.patch(
+  "/account/addresses/:addressId",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.params(UserValidator.addressParams),
+  ValidateMiddleware.body(UserValidator.updateAddress),
+  UserController.updateAddress,
+);
+
+// 4. Delete Address
+userRouter.delete(
+  "/account/addresses/:addressId",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.params(UserValidator.addressParams),
+  UserController.deleteAddress,
+);
+
+// 5. Set Address as Default
+userRouter.patch(
+  "/account/addresses/:addressId/default",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.params(UserValidator.addressParams),
+  UserController.setDefaultAddress,
+);

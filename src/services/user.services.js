@@ -769,6 +769,112 @@ export class UserServiceClass {
 
     return updatedUser;
   }
+
+  // ==========================================
+  // SHIPPING ADDRESS WORKFLOWS
+  // ==========================================
+
+  // 1. Add new shipping address
+  async addAddress(userId, addressData) {
+    const user = await User.findById(userId);
+    if (!user) throw new NotFoundError({ message: "User profile not found." });
+
+    // If user has no existing addresses, force this first one to be default
+    if (user.shippingAddresses.length === 0) {
+      addressData.isDefault = true;
+    } else if (addressData.isDefault) {
+      // Unset current default address if new address is marked default
+      user.shippingAddresses.forEach((addr) => {
+        addr.isDefault = false;
+      });
+    }
+
+    user.shippingAddresses.push(addressData);
+    await user.save();
+
+    return user.shippingAddresses;
+  }
+
+  // 2. Fetch all shipping addresses
+  async getAddresses(userId) {
+    const user = await User.findById(userId).select("shippingAddresses");
+    if (!user) throw new NotFoundError({ message: "User profile not found." });
+
+    return user.shippingAddresses;
+  }
+
+  // 3. Update existing address by subdocument ID
+  async updateAddress(userId, addressId, updateFields) {
+    const user = await User.findById(userId);
+    if (!user) throw new NotFoundError({ message: "User profile not found." });
+
+    const address = user.shippingAddresses.id(addressId);
+    if (!address) {
+      throw new NotFoundError({
+        message: "Shipping address record not found.",
+      });
+    }
+
+    // Handle default flag switching if explicitly set to true
+    if (updateFields.isDefault === true) {
+      user.shippingAddresses.forEach((addr) => {
+        addr.isDefault = false;
+      });
+    }
+
+    // Update provided fields on target subdocument
+    Object.assign(address, updateFields);
+    await user.save();
+
+    return user.shippingAddresses;
+  }
+
+  // 4. Delete address by subdocument ID
+  async deleteAddress(userId, addressId) {
+    const user = await User.findById(userId);
+    if (!user) throw new NotFoundError({ message: "User profile not found." });
+
+    const address = user.shippingAddresses.id(addressId);
+    if (!address) {
+      throw new NotFoundError({
+        message: "Shipping address record not found.",
+      });
+    }
+
+    const wasDefault = address.isDefault;
+
+    // Pull address out of array
+    user.shippingAddresses.pull(addressId);
+
+    // If deleted address was default and addresses remain, make the first one default
+    if (wasDefault && user.shippingAddresses.length > 0) {
+      user.shippingAddresses[0].isDefault = true;
+    }
+
+    await user.save();
+    return user.shippingAddresses;
+  }
+
+  // 5. Explicitly set an address as default
+  async setDefaultAddress(userId, addressId) {
+    const user = await User.findById(userId);
+    if (!user) throw new NotFoundError({ message: "User profile not found." });
+
+    const targetAddress = user.shippingAddresses.id(addressId);
+    if (!targetAddress) {
+      throw new NotFoundError({
+        message: "Shipping address record not found.",
+      });
+    }
+
+    // Set all to false, set target to true
+    user.shippingAddresses.forEach((addr) => {
+      addr.isDefault = addr._id.toString() === addressId;
+    });
+
+    await user.save();
+    return user.shippingAddresses;
+  }
 }
 
 export const UserService = new UserServiceClass();

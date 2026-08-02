@@ -416,6 +416,85 @@ export class UserControllerClass {
       next(error);
     }
   };
+
+  addAddress = async (req, res, next) => {
+    try {
+      const addresses = await UserService.addAddress(req.user.id, req.body);
+      return res.status(201).json({
+        success: true,
+        message: "Address added successfully.",
+        data: addresses,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getAddresses = async (req, res, next) => {
+    try {
+      const addresses = await UserService.getAddresses(req.user.id);
+      return res.status(200).json({
+        success: true,
+        data: addresses,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateAddress = async (req, res, next) => {
+    try {
+      const addresses = await UserService.updateAddress(
+        req.user.id,
+        req.params.addressId,
+        req.body,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Address updated successfully.",
+        data: addresses,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  deleteAddress = async (req, res, next) => {
+    try {
+      const addresses = await UserService.deleteAddress(
+        req.user.id,
+        req.params.addressId,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Address deleted successfully.",
+        data: addresses,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  setDefaultAddress = async (req, res, next) => {
+    try {
+      const addresses = await UserService.setDefaultAddress(
+        req.user.id,
+        req.params.addressId,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Default address set successfully.",
+        data: addresses,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export const UserController = new UserControllerClass();
