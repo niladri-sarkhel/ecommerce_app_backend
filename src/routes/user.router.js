@@ -90,3 +90,95 @@ userRouter.get(
   AuthMiddleware.authorize(["customer", "seller", "admin"]),
   UserController.getProfile,
 );
+
+// Step 1: Validate password & send OTP to current email
+userRouter.post(
+  "/account/email/change-initiate",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.initiateEmailChange),
+  UserController.initiateEmailChange,
+);
+
+// Step 2: Validate OTP from current email & receive state token
+userRouter.post(
+  "/account/email/verify-current-otp",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.verifyExistingEmailOtp),
+  UserController.verifyExistingEmailOtp,
+);
+
+// Step 3: Validate state token & send OTP to new email
+userRouter.post(
+  "/account/email/request-new-otp",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.requestNewEmailVerification),
+  UserController.requestNewEmailVerification,
+);
+
+// Step 4: Validate new email OTP & commit update
+userRouter.post(
+  "/account/email/confirm-update",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.confirmNewEmailUpdate),
+  UserController.confirmNewEmailUpdate,
+);
+
+// ----------------------------------------------------
+// Secure Multi-Step Phone Update Pipeline (Via Email OTP)
+// ----------------------------------------------------
+
+// Step 1: Validate current password -> Dispatch OTP to registered email
+userRouter.post(
+  "/account/phone/change-initiate",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.initiatePhoneChange),
+  UserController.initiatePhoneChange,
+);
+
+// Step 2: Validate email OTP -> Receive phoneChangeToken
+userRouter.post(
+  "/account/phone/verify-current-otp",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.verifyExistingPhoneOtp),
+  UserController.verifyExistingPhoneOtp,
+);
+
+// Step 3: Validate phoneChangeToken + new phone -> Dispatch final confirmation OTP to email
+userRouter.post(
+  "/account/phone/request-new-otp",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.requestNewPhoneVerification),
+  UserController.requestNewPhoneVerification,
+);
+
+// Step 4: Validate email OTP -> Update phone number in MongoDB
+userRouter.post(
+  "/account/phone/confirm-update",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.confirmNewPhoneUpdate),
+  UserController.confirmNewPhoneUpdate,
+);
+
+// Intercept basic profile updates (firstName, lastName)
+userRouter.patch(
+  "/account",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.updateProfile),
+  UserController.updateProfile,
+);
+
+// Step 1: Validate current password -> Send OTP to email
+userRouter.post(
+  "/account/password/change-initiate",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.initiatePasswordChange),
+  UserController.initiatePasswordChange,
+);
+
+// Step 2: Validate OTP + new password -> Commit new password
+userRouter.post(
+  "/account/password/change-confirm",
+  AuthMiddleware.authorize(["customer", "seller", "admin"]),
+  ValidateMiddleware.body(UserValidator.confirmPasswordChange),
+  UserController.confirmPasswordChange,
+);

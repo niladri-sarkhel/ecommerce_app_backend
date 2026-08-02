@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -36,7 +37,7 @@ export class UserServiceClass {
   // ==========================================
 
   async initiateSignup(signupData) {
-    const { email, password, firstName, lastName } = signupData;
+    const { email, password, firstName, lastName, phoneNumber } = signupData;
 
     // Check if user already exists in persistent storage
     const existingUser = await User.findOne({ email });
@@ -57,6 +58,7 @@ export class UserServiceClass {
       email,
       passwordHash,
       otp,
+      phoneNumber,
     });
     await redis.setex(redisKey, this._otpTtL, payload);
 
@@ -81,7 +83,8 @@ export class UserServiceClass {
       });
     }
 
-    const { firstName, lastName, passwordHash, otp } = JSON.parse(cachedData);
+    const { firstName, lastName, passwordHash, otp, phoneNumber } =
+      JSON.parse(cachedData);
 
     if (otp !== submittedOtp) {
       throw new ValidationError({
@@ -95,6 +98,7 @@ export class UserServiceClass {
       firstName,
       lastName,
       email: email.toLowerCase(),
+      phoneNumber,
       passwordHash,
       role: "customer", // Defaults to customer on direct signup
     });
@@ -255,28 +259,75 @@ export class UserServiceClass {
   // PROTECTED UTILITY WORKFLOWS
   // ==========================================
 
-  async changePassword(userId, currentPassword, newPassword) {
+  // ==========================================
+  // PASSWORD CHANGE WORKFLOW (Via Email OTP)
+  // ==========================================
+
+  // Step 1: Verify current password -> Dispatch OTP to registered email
+  async initiatePasswordChange(userId, currentPassword) {
     const user = await User.findById(userId);
     if (!user) {
-      throw new NotFoundError({
-        message: "Target user profile reference missing.",
-      });
+      throw new NotFoundError({ message: "User profile record missing." });
     }
 
-    const isOldPasswordMatch = await bcrypt.compare(
+    const isPasswordValid = await bcrypt.compare(
       currentPassword,
       user.passwordHash,
     );
-    if (!isOldPasswordMatch) {
+    if (!isPasswordValid) {
       throw new UnauthorizedError({
-        message: "Current credential verification parameters failed.",
+        message: "Invalid current password provided.",
       });
     }
 
+    const otp = generateOTP();
+    const redisKey = `pending:password-change:${userId}`;
+    await redis.setex(redisKey, this._otpTtL, otp);
+
+    await MailService.sendEmail(
+      user.email,
+      otp,
+      "Authorize Password Change Request",
+      "A request was made to change your account password. Use this verification code to authorize the change. Valid for 5 minutes.",
+    );
+
+    return {
+      message:
+        "Security verification code sent to your registered email address.",
+    };
+  }
+
+  // Step 2: Verify OTP & update password in MongoDB
+  async confirmPasswordChange(userId, submittedOtp, newPassword) {
+    const redisKey = `pending:password-change:${userId}`;
+    const cachedOtp = await redis.get(redisKey);
+
+    if (!cachedOtp) {
+      throw new ExpiredSessionError({
+        message: "Password reset session expired. Please request a new code.",
+      });
+    }
+
+    if (cachedOtp !== submittedOtp) {
+      throw new ValidationError({
+        message: "Invalid verification code provided.",
+        errors: ["OTP mismatch"],
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError({ message: "User profile record missing." });
+    }
+
+    // Hash new password & save document
     user.passwordHash = await bcrypt.hash(newPassword, 12);
     await user.save();
 
-    return { success: true };
+    // Clear Redis session
+    await redis.del(redisKey);
+
+    return { message: "Password updated successfully." };
   }
 
   async logout(userRole, res) {
@@ -382,6 +433,342 @@ export class UserServiceClass {
       sellerProfile: storeDetails,
     };
   };
+
+  // ==========================================
+  // PROFILE UPDATE WORKFLOW
+  // ==========================================
+
+  async updateProfile(userId, updateData) {
+    const { firstName, lastName } = updateData;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        ...(firstName && { firstName }),
+        ...(lastName && { lastName }),
+      },
+      { new: true, runValidators: true },
+    ).select("-passwordHash");
+
+    if (!updatedUser || !updatedUser.isActive) {
+      throw new NotFoundError({
+        message: "User profile record missing or inactive.",
+      });
+    }
+
+    return updatedUser;
+  }
+
+  async initiateEmailChange(userId, currentPassword) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError({ message: "User profile record missing." });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedError({
+        message: "Invalid current password provided.",
+      });
+    }
+
+    const otp = generateOTP();
+    const redisKey = `pending:email-change:step1:${userId}`;
+
+    // Cache OTP in Redis for 5 minutes
+    await redis.setex(redisKey, this._otpTtL, otp);
+
+    await MailService.sendEmail(
+      user.email,
+      otp,
+      "Authorize Email Change Request",
+      "A request was initiated to update your account email. Use this security code to verify ownership of your current email address.",
+    );
+
+    return {
+      message:
+        "Security authorization code sent to your current email address.",
+    };
+  }
+
+  // Step 2: Verify current email OTP -> issue temporary session authorization token
+  async verifyExistingEmailOtp(userId, submittedOtp) {
+    const redisKey = `pending:email-change:step1:${userId}`;
+    const cachedOtp = await redis.get(redisKey);
+
+    if (!cachedOtp) {
+      throw new ExpiredSessionError({
+        message:
+          "Email verification session expired. Please restart the process.",
+      });
+    }
+
+    if (cachedOtp !== submittedOtp) {
+      throw new ValidationError({
+        message: "Invalid verification code provided.",
+        errors: ["OTP mismatch"],
+      });
+    }
+
+    // Clear step 1 state
+    await redis.del(redisKey);
+
+    // Generate temporary access token for step 3 & 4 (Valid for 10 minutes)
+    const emailChangeToken = crypto.randomBytes(32).toString("hex");
+    const tokenKey = `pending:email-change:authorized:${userId}`;
+    await redis.setex(tokenKey, 600, emailChangeToken);
+
+    return { emailChangeToken };
+  }
+
+  // Step 3: Check new email uniqueness & send OTP to target email
+  async requestNewEmailVerification(userId, emailChangeToken, newEmail) {
+    const tokenKey = `pending:email-change:authorized:${userId}`;
+    const storedToken = await redis.get(tokenKey);
+
+    if (!storedToken || storedToken !== emailChangeToken) {
+      throw new UnauthorizedError({
+        message: "Unauthorized or expired email modification session.",
+      });
+    }
+
+    // Check if target email is already claimed by another user
+    const existingUser = await User.findOne({ email: newEmail.toLowerCase() });
+    if (existingUser) {
+      throw new ConflictError({
+        message: "An account with this target email address already exists.",
+      });
+    }
+
+    const newOtp = generateOTP();
+    const redisKey = `pending:email-change:step2:${userId}`;
+    const payload = JSON.stringify({
+      newEmail: newEmail.toLowerCase(),
+      otp: newOtp,
+    });
+
+    await redis.setex(redisKey, this._otpTtL, payload);
+
+    await MailService.sendEmail(
+      newEmail,
+      newOtp,
+      "Verify Your New Email Address",
+      "Please use this code to confirm and link your new email address to your account.",
+    );
+
+    return { message: "Verification code sent to your new email address." };
+  }
+
+  // Step 4: Verify new email OTP & commit update to MongoDB
+  async confirmNewEmailUpdate(
+    userId,
+    emailChangeToken,
+    newEmail,
+    submittedOtp,
+  ) {
+    const tokenKey = `pending:email-change:authorized:${userId}`;
+    const storedToken = await redis.get(tokenKey);
+
+    if (!storedToken || storedToken !== emailChangeToken) {
+      throw new UnauthorizedError({
+        message: "Unauthorized or expired email modification session.",
+      });
+    }
+
+    const step2Key = `pending:email-change:step2:${userId}`;
+    const cachedData = await redis.get(step2Key);
+
+    if (!cachedData) {
+      throw new ExpiredSessionError({
+        message:
+          "New email verification session expired. Please request a new code.",
+      });
+    }
+
+    const { newEmail: targetEmail, otp: storedOtp } = JSON.parse(cachedData);
+
+    if (targetEmail !== newEmail.toLowerCase() || storedOtp !== submittedOtp) {
+      throw new ValidationError({
+        message: "Invalid verification details or target email mismatch.",
+      });
+    }
+
+    // Persist updated email
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { email: newEmail.toLowerCase() },
+      { new: true },
+    ).select("-passwordHash");
+
+    // Clean up Redis keys
+    await redis.del([tokenKey, step2Key]);
+
+    return updatedUser;
+  }
+
+  async initiatePhoneChange(userId, currentPassword) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError({ message: "User profile record missing." });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedError({
+        message: "Invalid current password provided.",
+      });
+    }
+
+    const otp = generateOTP();
+    const redisKey = `pending:phone-change:step1:${userId}`;
+
+    // Cache OTP in Redis for 5 minutes
+    await redis.setex(redisKey, this._otpTtL, otp);
+
+    // Dispatch OTP to existing registered email address
+    await MailService.sendEmail(
+      user.email,
+      otp,
+      "Authorize Phone Number Change Request",
+      "A request was initiated to update your account phone number. Use this security authorization code to verify your identity. Valid for 5 minutes.",
+    );
+
+    return {
+      message:
+        "Security authorization code sent to your registered email address.",
+    };
+  }
+
+  // Step 2: Verify existing email OTP -> issue temporary session authorization token
+  async verifyExistingPhoneOtp(userId, submittedOtp) {
+    const redisKey = `pending:phone-change:step1:${userId}`;
+    const cachedOtp = await redis.get(redisKey);
+
+    if (!cachedOtp) {
+      throw new ExpiredSessionError({
+        message:
+          "Phone verification session expired. Please restart the process.",
+      });
+    }
+
+    if (cachedOtp !== submittedOtp) {
+      throw new ValidationError({
+        message: "Invalid verification code provided.",
+        errors: ["OTP mismatch"],
+      });
+    }
+
+    // Clear step 1 Redis key
+    await redis.del(redisKey);
+
+    // Issue temporary single-use token (10 min TTL)
+    const phoneChangeToken = crypto.randomBytes(32).toString("hex");
+    const tokenKey = `pending:phone-change:authorized:${userId}`;
+    await redis.setex(tokenKey, 600, phoneChangeToken);
+
+    return { phoneChangeToken };
+  }
+
+  // Step 3: Check new phone uniqueness & dispatch verification OTP to registered email
+  async requestNewPhoneVerification(userId, phoneChangeToken, newPhoneNumber) {
+    const tokenKey = `pending:phone-change:authorized:${userId}`;
+    const storedToken = await redis.get(tokenKey);
+
+    if (!storedToken || storedToken !== phoneChangeToken) {
+      throw new UnauthorizedError({
+        message: "Unauthorized or expired phone modification session.",
+      });
+    }
+
+    // Ensure new phone number isn't registered to another account
+    const existingUser = await User.findOne({ phoneNumber: newPhoneNumber });
+    if (existingUser) {
+      throw new ConflictError({
+        message: "This phone number is already registered to another account.",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError({ message: "User profile record missing." });
+    }
+
+    const newOtp = generateOTP();
+    const redisKey = `pending:phone-change:step2:${userId}`;
+    const payload = JSON.stringify({
+      newPhoneNumber,
+      otp: newOtp,
+    });
+
+    await redis.setex(redisKey, this._otpTtL, payload);
+
+    // Send secondary confirmation OTP to the user's email
+    await MailService.sendEmail(
+      user.email,
+      newOtp,
+      "Confirm New Phone Number Update",
+      `Use this verification code to confirm linking ${newPhoneNumber} as your new account phone number. Valid for 5 minutes.`,
+    );
+
+    return {
+      message: "Confirmation code sent to your registered email address.",
+    };
+  }
+
+  // Step 4: Verify email OTP & commit new phone number to MongoDB
+  async confirmNewPhoneUpdate(
+    userId,
+    phoneChangeToken,
+    newPhoneNumber,
+    submittedOtp,
+  ) {
+    const tokenKey = `pending:phone-change:authorized:${userId}`;
+    const storedToken = await redis.get(tokenKey);
+
+    if (!storedToken || storedToken !== phoneChangeToken) {
+      throw new UnauthorizedError({
+        message: "Unauthorized or expired phone modification session.",
+      });
+    }
+
+    const step2Key = `pending:phone-change:step2:${userId}`;
+    const cachedData = await redis.get(step2Key);
+
+    if (!cachedData) {
+      throw new ExpiredSessionError({
+        message:
+          "New phone verification session expired. Please request a new code.",
+      });
+    }
+
+    const { newPhoneNumber: targetPhone, otp: storedOtp } =
+      JSON.parse(cachedData);
+
+    if (targetPhone !== newPhoneNumber || storedOtp !== submittedOtp) {
+      throw new ValidationError({
+        message: "Invalid verification code or target phone number mismatch.",
+      });
+    }
+
+    // Persist update in MongoDB
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { phoneNumber: newPhoneNumber },
+      { new: true },
+    ).select("-passwordHash");
+
+    // Clean up Redis keys
+    await redis.del([tokenKey, step2Key]);
+
+    return updatedUser;
+  }
 }
 
 export const UserService = new UserServiceClass();

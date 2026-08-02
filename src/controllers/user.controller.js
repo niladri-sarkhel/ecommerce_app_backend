@@ -7,13 +7,14 @@ export class UserControllerClass {
 
   initiateSignup = async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { email, password, firstName, lastName, phoneNumber } = req.body;
 
       const result = await UserService.initiateSignup({
         email,
         password,
         firstName,
         lastName,
+        phoneNumber,
       });
 
       return res.status(202).json({
@@ -89,6 +90,23 @@ export class UserControllerClass {
           },
           sessionCookieName: tokenName,
         },
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateProfile = async (req, res, next) => {
+    try {
+      const updatedUser = await UserService.updateProfile(
+        req.user.id,
+        req.body,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Profile details updated successfully.",
+        data: updatedUser,
         error: null,
       });
     } catch (error) {
@@ -241,8 +259,163 @@ export class UserControllerClass {
       next(error);
     }
   };
-}
 
-// Inside class UserControllerClass ...
+  initiateEmailChange = async (req, res, next) => {
+    try {
+      const result = await UserService.initiateEmailChange(
+        req.user.id,
+        req.body.currentPassword,
+      );
+      return res.status(200).json({ success: true, data: result, error: null });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyExistingEmailOtp = async (req, res, next) => {
+    try {
+      const result = await UserService.verifyExistingEmailOtp(
+        req.user.id,
+        req.body.otp,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Current email verified. You may now enter your new email.",
+        data: result,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  requestNewEmailVerification = async (req, res, next) => {
+    try {
+      const { emailChangeToken, newEmail } = req.body;
+      const result = await UserService.requestNewEmailVerification(
+        req.user.id,
+        emailChangeToken,
+        newEmail,
+      );
+      return res.status(200).json({ success: true, data: result, error: null });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  confirmNewEmailUpdate = async (req, res, next) => {
+    try {
+      const { emailChangeToken, newEmail, otp } = req.body;
+      const updatedUser = await UserService.confirmNewEmailUpdate(
+        req.user.id,
+        emailChangeToken,
+        newEmail,
+        otp,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Email address updated successfully.",
+        data: updatedUser,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  initiatePhoneChange = async (req, res, next) => {
+    try {
+      const result = await UserService.initiatePhoneChange(
+        req.user.id,
+        req.body.currentPassword,
+      );
+      return res.status(200).json({ success: true, data: result, error: null });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyExistingPhoneOtp = async (req, res, next) => {
+    try {
+      const result = await UserService.verifyExistingPhoneOtp(
+        req.user.id,
+        req.body.otp,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Identity verified. You may now enter your new phone number.",
+        data: result,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  requestNewPhoneVerification = async (req, res, next) => {
+    try {
+      const { phoneChangeToken, newPhoneNumber } = req.body;
+      const result = await UserService.requestNewPhoneVerification(
+        req.user.id,
+        phoneChangeToken,
+        newPhoneNumber,
+      );
+      return res.status(200).json({ success: true, data: result, error: null });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  confirmNewPhoneUpdate = async (req, res, next) => {
+    try {
+      const { phoneChangeToken, newPhoneNumber, otp } = req.body;
+      const updatedUser = await UserService.confirmNewPhoneUpdate(
+        req.user.id,
+        phoneChangeToken,
+        newPhoneNumber,
+        otp,
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Phone number updated successfully.",
+        data: updatedUser,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  initiatePasswordChange = async (req, res, next) => {
+    try {
+      const result = await UserService.initiatePasswordChange(
+        req.user.id,
+        req.body.currentPassword,
+      );
+      return res.status(200).json({ success: true, data: result, error: null });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  confirmPasswordChange = async (req, res, next) => {
+    try {
+      const { otp, newPassword } = req.body;
+      const result = await UserService.confirmPasswordChange(
+        req.user.id,
+        otp,
+        newPassword,
+      );
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        data: null,
+        error: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+}
 
 export const UserController = new UserControllerClass();

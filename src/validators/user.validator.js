@@ -8,7 +8,9 @@ export class UserValidatorClass {
   _otpStr = Joi.string().length(6).pattern(/^\d+$/).required();
   _phoneStr = Joi.string()
     .pattern(/^\+?[1-9]\d{1,14}$/)
-    .trim(); // Validates standard E.164 phone formats
+    .message("Phone number must be in valid E.164 format (e.g. +1234567890)")
+    .trim()
+    .required();
 
   // Reusable sub-validator mapping identically to your addressSchema fields
   _addressObject = Joi.object({
@@ -28,12 +30,18 @@ export class UserValidatorClass {
     lastName: Joi.string().min(2).max(50).trim().required(),
     email: this._emailStr,
     password: this._passwordStr,
+    phoneNumber: this._phoneStr, // <-- Added required phone validation
   });
 
   verifySignup = Joi.object({
     email: this._emailStr,
     otp: this._otpStr,
   });
+
+  updateProfile = Joi.object({
+    firstName: Joi.string().min(2).max(50).trim().optional(),
+    lastName: Joi.string().min(2).max(50).trim().optional(),
+  }).min(1); // Ensures client sends at least one field to update
 
   // ==========================================
   // AUTHENTICATION VALIDATION SCHEMAS
@@ -85,23 +93,55 @@ export class UserValidatorClass {
     businessAddress: this._addressObject.required(),
   });
 
-  initiateEmailUpdate = Joi.object({
+  initiateEmailChange = Joi.object({
+    currentPassword: this._passwordStr,
+  });
+
+  verifyExistingEmailOtp = Joi.object({
+    otp: this._otpStr,
+  });
+
+  requestNewEmailVerification = Joi.object({
+    emailChangeToken: Joi.string().required(),
     newEmail: this._emailStr,
   });
 
-  verifyEmailUpdate = Joi.object({
+  confirmNewEmailUpdate = Joi.object({
+    emailChangeToken: Joi.string().required(),
     newEmail: this._emailStr,
     otp: this._otpStr,
   });
 
-  // 2. Phone Number Change Pipeline (Uses Email for OTP)
-  initiatePhoneUpdate = Joi.object({
-    newPhoneNumber: this._phoneStr.required(),
+  // ==========================================
+  // PHONE CHANGE VALIDATION SCHEMAS
+  // ==========================================
+
+  initiatePhoneChange = Joi.object({
+    currentPassword: this._passwordStr,
   });
 
-  verifyPhoneUpdate = Joi.object({
-    newPhoneNumber: this._phoneStr.required(),
+  verifyExistingPhoneOtp = Joi.object({
     otp: this._otpStr,
+  });
+
+  requestNewPhoneVerification = Joi.object({
+    phoneChangeToken: Joi.string().required(),
+    newPhoneNumber: this._phoneStr,
+  });
+
+  confirmNewPhoneUpdate = Joi.object({
+    phoneChangeToken: Joi.string().required(),
+    newPhoneNumber: this._phoneStr,
+    otp: this._otpStr,
+  });
+
+  initiatePasswordChange = Joi.object({
+    currentPassword: this._passwordStr,
+  });
+
+  confirmPasswordChange = Joi.object({
+    otp: this._otpStr,
+    newPassword: this._passwordStr,
   });
 }
 

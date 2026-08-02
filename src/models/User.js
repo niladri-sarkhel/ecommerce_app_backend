@@ -33,7 +33,8 @@ const userSchema = new mongoose.Schema(
     phoneNumber: {
       type: String,
       trim: true,
-      default: null,
+      required: true,
+      unique: true,
     },
     shippingAddresses: {
       type: [addressSchema],
